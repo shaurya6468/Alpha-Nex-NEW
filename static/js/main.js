@@ -416,7 +416,7 @@
             
             // Password confirmation
             if (field.name === 'confirm_password') {
-                const password = form.querySelector('input[name="password"]');
+                const password = field.form.querySelector('input[name="password"]');
                 if (password && value !== password.value) {
                     isValid = false;
                     message = 'Passwords do not match.';
