@@ -50,16 +50,6 @@ class ReviewForm(FlaskForm):
                               validators=[DataRequired(), Length(min=20, max=500)],
                               render_kw={"placeholder": "Explain your rating in detail..."})
 
-class KYCForm(FlaskForm):
-    document = FileField('ID Document (Passport/License)', validators=[
-        FileRequired(),
-        FileAllowed(['jpg', 'jpeg', 'png', 'pdf'], 'Images and PDF only')
-    ])
-    selfie = FileField('Selfie Photo', validators=[
-        FileRequired(), 
-        FileAllowed(['jpg', 'jpeg', 'png'], 'Images only')
-    ])
-
 class WithdrawalForm(FlaskForm):
     amount_xp = IntegerField('XP Amount', validators=[DataRequired()])
     payment_method = SelectField('Payment Method', validators=[DataRequired()], choices=[

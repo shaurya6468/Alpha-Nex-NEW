@@ -12,13 +12,8 @@
                     <i class="fas fa-user-circle me-2"></i>Welcome back, {{ current_user.name }}!
                 </h2>
                 <p class="text-muted mb-0">
-                    {% if not current_user.kyc_verified %}
-                    <i class="fas fa-exclamation-triangle text-warning me-1"></i>
-                    Complete KYC verification to unlock all features
-                    {% else %}
                     <i class="fas fa-check-circle text-success me-1"></i>
-                    Account verified and ready to earn XP points
-                    {% endif %}
+                    Account ready to upload content and earn XP points
                 </p>
             </div>
             <div class="text-end">
@@ -135,7 +130,7 @@
 <div class="row g-4 mb-4">
     <!-- Upload Card -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 {% if not current_user.kyc_verified or current_user.is_banned %}opacity-50{% endif %}">
+        <div class="card border-0 shadow-sm h-100 {% if current_user.is_banned %}opacity-50{% endif %}">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="bg-black text-white rounded p-3">
@@ -157,14 +152,13 @@
                     <small class="text-muted ms-2">{{ "%.0f"|format(500 - daily_remaining_mb) }}/500 MB</small>
                 </div>
                 
-                {% if current_user.kyc_verified and not current_user.is_banned %}
+                {% if not current_user.is_banned %}
                 <a href="{{ url_for('upload_file') }}" class="btn btn-dark w-100">
                     <i class="fas fa-upload me-2"></i>Start Uploading
                 </a>
                 {% else %}
                 <button class="btn btn-secondary w-100" disabled>
-                    <i class="fas fa-lock me-2"></i>
-                    {% if not current_user.kyc_verified %}KYC Required{% else %}Account Banned{% endif %}
+                    <i class="fas fa-ban me-2"></i>Account Banned
                 </button>
                 {% endif %}
                 
@@ -184,7 +178,7 @@
     
     <!-- Review Card -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 {% if not current_user.kyc_verified or current_user.is_banned %}opacity-50{% endif %}">
+        <div class="card border-0 shadow-sm h-100 {% if current_user.is_banned %}opacity-50{% endif %}">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="bg-black text-white rounded p-3">
@@ -207,14 +201,13 @@
                     </div>
                 </div>
                 
-                {% if current_user.kyc_verified and not current_user.is_banned %}
+                {% if not current_user.is_banned %}
                 <a href="{{ url_for('review_content') }}" class="btn btn-dark w-100">
                     <i class="fas fa-search me-2"></i>Start Reviewing
                 </a>
                 {% else %}
                 <button class="btn btn-secondary w-100" disabled>
-                    <i class="fas fa-lock me-2"></i>
-                    {% if not current_user.kyc_verified %}KYC Required{% else %}Account Banned{% endif %}
+                    <i class="fas fa-ban me-2"></i>Account Banned
                 </button>
                 {% endif %}
                 

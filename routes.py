@@ -7,7 +7,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, c
 from flask_login import login_user, logout_user, login_required, current_user
 from app import app, db
 from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction
-from forms import SignupForm, LoginForm, UploadForm, ReviewForm, KYCForm, WithdrawalForm
+from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm
 from utils import allowed_file, get_file_size, calculate_xp_reward
 from openai_service import detect_duplicate_content, check_content_quality
 
@@ -34,7 +34,7 @@ def signup():
         db.session.add(user)
         db.session.commit()
         
-        flash('Account created successfully! Please complete KYC verification.', 'success')
+        flash('Account created successfully! You can now start uploading and reviewing content.', 'success')
         login_user(user)
         return redirect(url_for('dashboard'))
     
@@ -92,10 +92,7 @@ def dashboard():
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload_file():
-    if not current_user.kyc_verified:
-        flash('Please complete KYC verification before uploading content.', 'warning')
-        return redirect(url_for('dashboard'))
-    
+    """File upload endpoint"""
     if current_user.is_banned:
         flash('Your account is banned and cannot upload content.', 'error')
         return redirect(url_for('dashboard'))
@@ -169,10 +166,7 @@ def upload_file():
 @app.route('/review')
 @login_required
 def review_content():
-    if not current_user.kyc_verified:
-        flash('Please complete KYC verification before reviewing content.', 'warning')
-        return redirect(url_for('dashboard'))
-    
+    """Content review endpoint"""
     if current_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
@@ -304,17 +298,17 @@ def admin_panel():
         return redirect(url_for('dashboard'))
     
     # Get pending items
-    pending_kyc = User.query.filter_by(kyc_verified=False).count()
     pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
     flagged_content = Upload.query.filter_by(status='flagged').count()
+    total_users = User.query.count()
     
     # Get recent violations
     recent_strikes = Strike.query.order_by(Strike.created_at.desc()).limit(10).all()
     
     return render_template('admin/panel.html', 
-                         pending_kyc=pending_kyc,
                          pending_withdrawals=pending_withdrawals,
                          flagged_content=flagged_content,
+                         total_users=total_users,
                          recent_strikes=recent_strikes)
 
 # API endpoint for countdown timer updates
