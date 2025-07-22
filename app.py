@@ -26,6 +26,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:/
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
+    "pool_timeout": 20,
 }
 
 # Configure upload settings

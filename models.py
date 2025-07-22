@@ -42,6 +42,7 @@ class User(UserMixin, db.Model):
         return max_daily - self.daily_upload_bytes
     
     def can_upload(self, file_size):
+        """Check if user can upload a file of given size"""
         return self.get_daily_upload_remaining() >= file_size and not self.is_banned
     
     def add_strike(self, strike_type, reason):

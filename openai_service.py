@@ -13,6 +13,7 @@ def detect_duplicate_content(file_path, description):
     """
     Analyze content for potential duplicates and spam using AI.
     Returns tuple of (duplicate_score, spam_score) both 0.0-1.0
+    Uses GPT-4o for intelligent content analysis.
     """
     if not openai_client:
         # Return default scores if OpenAI is not available

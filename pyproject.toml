@@ -1,7 +1,7 @@
 [project]
-name = "repl-nix-workspace"
+name = "alpha-nex"
 version = "0.1.0"
-description = "Add your description here"
+description = "Content platform with AI integration and reward systems"
 requires-python = ">=3.11"
 dependencies = [
     "apscheduler>=3.11.0",

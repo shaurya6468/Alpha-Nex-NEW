@@ -9,10 +9,10 @@
     window.AlphaNex = {
         // Configuration
         config: {
-            maxFileSize: 500 * 1024 * 1024, // 500MB
+            maxFileSize: 500 * 1024 * 1024, // 500MB limit
             allowedExtensions: ['pdf', 'mp4', 'mp3', 'wav', 'txt', 'py', 'js', 'html', 'css', 'jpg', 'jpeg', 'png', 'gif'],
-            refreshInterval: 30000, // 30 seconds
-            animationDuration: 300
+            refreshInterval: 30000, // 30 seconds refresh
+            animationDuration: 300 // milliseconds
         },
         
         // Initialize app

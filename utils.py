@@ -32,12 +32,12 @@ def get_file_size(file):
     return size
 
 def calculate_xp_reward(action_type):
-    """Calculate XP reward for different actions."""
+    """Calculate XP reward for different platform actions."""
     rewards = {
-        'upload': 20,
-        'review': 10,
-        'quality_bonus': 5,
-        'daily_login': 5
+        'upload': 20,  # File upload reward
+        'review': 10,  # Content review reward
+        'quality_bonus': 5,  # High quality bonus
+        'daily_login': 5  # Daily engagement
     }
     return rewards.get(action_type, 0)
 
