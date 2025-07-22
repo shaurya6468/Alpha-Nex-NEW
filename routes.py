@@ -13,10 +13,12 @@ from openai_service import detect_duplicate_content, check_content_quality
 
 @app.route('/')
 def index():
+    """Landing page for Alpha Nex platform"""
     return render_template('index.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """User registration endpoint"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
     

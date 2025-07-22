@@ -31,6 +31,7 @@ class User(UserMixin, db.Model):
     withdrawals = db.relationship('WithdrawalRequest', backref='user', lazy=True)
     
     def get_daily_upload_remaining(self):
+        """Calculate remaining daily upload capacity in bytes"""
         # Reset daily counter if it's a new day
         if datetime.utcnow().date() > self.daily_upload_reset.date():
             self.daily_upload_bytes = 0

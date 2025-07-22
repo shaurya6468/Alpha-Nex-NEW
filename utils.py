@@ -1,6 +1,8 @@
 import os
 from werkzeug.utils import secure_filename
 
+# Alpha Nex Utility Functions
+
 ALLOWED_EXTENSIONS = {
     'video': ['mp4', 'avi', 'mov', 'wmv'],
     'audio': ['mp3', 'wav', 'aac', 'm4a'],

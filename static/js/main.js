@@ -1,5 +1,6 @@
 // Alpha Nex - Main JavaScript File
 // Handles interactive features and form validation
+// Last updated: 2025
 
 (function() {
     'use strict';

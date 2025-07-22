@@ -2,6 +2,8 @@ import json
 import os
 from openai import OpenAI
 
+# Alpha Nex AI Content Analysis Service
+
 # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 # do not change this unless explicitly requested by the user
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
