@@ -6,8 +6,8 @@ from werkzeug.utils import secure_filename
 from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app import app, db
-from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction
-from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm
+from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction, Rating
+from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm, RatingForm
 from utils import allowed_file, get_file_size, calculate_xp_reward
 from openai_service import detect_duplicate_content, check_content_quality
 
@@ -292,6 +292,29 @@ def review_upload(upload_id):
     
     return render_template('reviewer/review_upload.html', upload=upload, form=form, 
                          existing_reviews=existing_reviews, review_count=len(existing_reviews))
+
+@app.route('/rating', methods=['GET', 'POST'])
+@login_required
+def rate_website():
+    """Website rating and feedback page"""
+    form = RatingForm()
+    
+    if form.validate_on_submit():
+        # Create rating record
+        rating = Rating()
+        rating.user_id = current_user.id
+        rating.rating = form.rating.data
+        rating.category = form.category.data
+        rating.description = form.description.data
+        rating.contact_email = form.contact_email.data if form.contact_email.data else None
+        
+        db.session.add(rating)
+        db.session.commit()
+        
+        flash('Thank you for your feedback! Your rating has been submitted and will help us improve Alpha Nex.', 'success')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('rating.html', form=form)
 
 @app.route('/profile')
 @login_required

@@ -55,3 +55,18 @@ class WithdrawalForm(FlaskForm):
         ('crypto', 'Cryptocurrency')
     ])
     payment_details = TextAreaField('Payment Details', validators=[DataRequired()])
+
+class RatingForm(FlaskForm):
+    rating = IntegerField('Overall Rating', validators=[DataRequired()])
+    category = SelectField('Feedback Category', validators=[DataRequired()], choices=[
+        ('general', 'General Feedback'),
+        ('bug_report', 'Bug Report'),
+        ('feature_request', 'Feature Request'),
+        ('ui_ux', 'User Interface/Experience'),
+        ('performance', 'Performance Issues'),
+        ('suggestion', 'Improvement Suggestion')
+    ])
+    description = TextAreaField('Detailed Feedback', 
+                              validators=[DataRequired(), Length(min=10, max=2000)],
+                              render_kw={"placeholder": "Please share your detailed feedback..."})
+    contact_email = StringField('Your Email (Optional)', validators=[Email()])
