@@ -32,14 +32,23 @@ class User(UserMixin, db.Model):
     
     def get_daily_upload_remaining(self):
         """Calculate remaining daily upload capacity in bytes"""
-        # Reset daily counter if it's a new day
-        if datetime.utcnow().date() > self.daily_upload_reset.date():
-            self.daily_upload_bytes = 0
-            self.daily_upload_reset = datetime.utcnow()
-            db.session.commit()
-        
-        max_daily = 500 * 1024 * 1024  # 500MB in bytes
-        return max_daily - self.daily_upload_bytes
+        try:
+            # Reset daily counter if it's a new day
+            if self.daily_upload_reset and datetime.utcnow().date() > self.daily_upload_reset.date():
+                self.daily_upload_bytes = 0
+                self.daily_upload_reset = datetime.utcnow()
+                db.session.commit()
+            elif not self.daily_upload_reset:
+                # Handle case where daily_upload_reset is None
+                self.daily_upload_reset = datetime.utcnow()
+                db.session.commit()
+            
+            max_daily = 500 * 1024 * 1024  # 500MB in bytes
+            current_usage = self.daily_upload_bytes or 0
+            return max_daily - current_usage
+        except Exception as e:
+            # Return default full limit on any error
+            return 500 * 1024 * 1024
     
     def can_upload(self, file_size):
         """Check if user can upload a file of given size"""

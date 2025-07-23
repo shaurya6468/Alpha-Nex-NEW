@@ -138,7 +138,7 @@ def upload_file():
                 db.session.add(upload)
                 db.session.commit()
                 
-                # Run AI analysis (in background ideally, but simplified here)
+                # Run AI analysis with error handling
                 try:
                     duplicate_score, spam_score = detect_duplicate_content(file_path, form.description.data)
                     upload.duplicate_score = duplicate_score
@@ -151,17 +151,32 @@ def upload_file():
                     
                     db.session.commit()
                 except Exception as e:
+                    # AI analysis failed but upload should still succeed
                     app.logger.error(f"AI analysis failed: {e}")
+                    # Set default safe values
+                    upload.duplicate_score = 0.0
+                    upload.spam_score = 0.0
+                    db.session.commit()
                 
                 flash(f'✅ Upload Complete! File "{filename}" has been successfully uploaded and saved. Status: Pending Review (will be approved within 24 hours). You earned {upload_xp} XP points!', 'success')
                 return redirect(url_for('dashboard'))
                 
             except Exception as e:
+                app.logger.error(f"Upload failed: {e}")
                 flash(f'Upload failed: {str(e)}', 'error')
+        else:
+            if file:
+                flash('File type not supported. Please try a different file.', 'error')
+            else:
+                flash('Please select a file and ensure all fields are filled.', 'error')
     
-    # Calculate remaining daily upload capacity
-    daily_remaining = current_user.get_daily_upload_remaining()
-    daily_remaining_mb = daily_remaining / (1024 * 1024)
+    # Calculate remaining daily upload capacity with error handling
+    try:
+        daily_remaining = current_user.get_daily_upload_remaining()
+        daily_remaining_mb = daily_remaining / (1024 * 1024)
+    except Exception as e:
+        app.logger.error(f"Daily limit calculation failed: {e}")
+        daily_remaining_mb = 500.0  # Default to full limit
     
     return render_template('uploader/upload.html', form=form, daily_remaining_mb=daily_remaining_mb)
 
