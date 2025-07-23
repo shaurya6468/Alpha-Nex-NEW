@@ -38,7 +38,6 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('dashboard') }}">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
@@ -55,26 +54,24 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('rate_website') }}">
-                            <i class="fas fa-thumbs-up me-1"></i>Rate Us
+                        <a class="nav-link" href="{{ url_for('profile') }}">
+                            <i class="fas fa-user me-1"></i>Profile
                         </a>
                     </li>
-                    {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                            <span class="badge bg-dark me-2">{{ current_user.xp_points }} XP</span>
-                            <i class="fas fa-user-circle me-1"></i>{{ current_user.name }}
+                            <span class="badge bg-dark me-2">{{ demo_user.xp_points if demo_user else 500 }} XP</span>
+                            <i class="fas fa-user-circle me-1"></i>{{ demo_user.name if demo_user else 'Demo User' }}
                             
                             <!-- Strike warnings -->
-                            {% if current_user.uploader_strikes > 0 or current_user.reviewer_strikes > 0 %}
+                            {% if demo_user and (demo_user.uploader_strikes > 0 or demo_user.reviewer_strikes > 0) %}
                             <span class="badge bg-warning text-dark ms-2">
                                 <i class="fas fa-exclamation-triangle"></i>
-                                {% if current_user.uploader_strikes > 0 %}U:{{ current_user.uploader_strikes }}{% endif %}
-                                {% if current_user.reviewer_strikes > 0 %}R:{{ current_user.reviewer_strikes }}{% endif %}
+                                {% if demo_user.uploader_strikes > 0 %}U:{{ demo_user.uploader_strikes }}{% endif %}
+                                {% if demo_user.reviewer_strikes > 0 %}R:{{ demo_user.reviewer_strikes }}{% endif %}
                             </span>
                             {% endif %}
                         </a>
@@ -82,20 +79,8 @@
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}">
                                 <i class="fas fa-user me-2"></i>Profile
                             </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logout
-                            </a></li>
                         </ul>
                     </li>
-                    {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="btn btn-dark btn-sm" href="{{ url_for('signup') }}">Sign Up</a>
-                    </li>
-                    {% endif %}
                 </ul>
             </div>
         </div>

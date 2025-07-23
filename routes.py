@@ -106,8 +106,8 @@ def dashboard():
         # Create test files from test user for demo user to review
         create_test_files(test_user)
     
-    # Simulate login for the demo user
-    login_user(demo_user)
+    # Set demo user as current user context (no authentication needed)
+    # login_user(demo_user)  # Removed since we don't need sessions
     
     # Get user stats
     upload_count = Upload.query.filter_by(user_id=demo_user.id).count()
@@ -125,12 +125,18 @@ def dashboard():
                          upload_count=upload_count,
                          review_count=review_count,
                          recent_uploads=recent_uploads,
-                         daily_remaining_mb=daily_remaining_mb)
+                         daily_remaining_mb=daily_remaining_mb,
+                         demo_user=demo_user)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     """File upload endpoint"""
-    if current_user.is_banned:
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
+    if demo_user.is_banned:
         flash('Your account is banned and cannot upload content.', 'error')
         return redirect(url_for('dashboard'))
     
@@ -143,7 +149,7 @@ def upload_file():
             # Check file size and daily limit
             file_size = get_file_size(file)
             
-            if not current_user.can_upload(file_size):
+            if not demo_user.can_upload(file_size):
                 flash('Upload would exceed daily 500MB limit.', 'error')
                 return render_template('uploader/upload.html', form=form)
             
@@ -157,7 +163,7 @@ def upload_file():
                 
                 # Create upload record
                 upload = Upload()
-                upload.user_id = current_user.id
+                upload.user_id = demo_user.id
                 upload.filename = unique_filename
                 upload.original_filename = filename
                 upload.file_path = file_path
@@ -168,9 +174,9 @@ def upload_file():
                 upload.status = 'pending'  # Set initial status to pending review
                 
                 # Update user's daily upload count and award XP
-                current_user.daily_upload_bytes += file_size
+                demo_user.daily_upload_bytes += file_size
                 upload_xp = calculate_xp_reward('upload')
-                current_user.xp_points += upload_xp
+                demo_user.xp_points += upload_xp
                 
                 db.session.add(upload)
                 db.session.commit()
@@ -184,7 +190,7 @@ def upload_file():
                     # Auto-flag if scores are high
                     if duplicate_score > 0.8 or spam_score > 0.7:
                         upload.status = 'flagged'
-                        current_user.add_strike('uploader', f'High duplicate ({duplicate_score:.2f}) or spam ({spam_score:.2f}) score')
+                        demo_user.add_strike('uploader', f'High duplicate ({duplicate_score:.2f}) or spam ({spam_score:.2f}) score')
                     
                     db.session.commit()
                 except Exception as e:
@@ -209,27 +215,32 @@ def upload_file():
     
     # Calculate remaining daily upload capacity with error handling
     try:
-        daily_remaining = current_user.get_daily_upload_remaining()
+        daily_remaining = demo_user.get_daily_upload_remaining()
         daily_remaining_mb = daily_remaining / (1024 * 1024)
     except Exception as e:
         app.logger.error(f"Daily limit calculation failed: {e}")
         daily_remaining_mb = 500.0  # Default to full limit
     
-    return render_template('uploader/upload.html', form=form, daily_remaining_mb=daily_remaining_mb)
+    return render_template('uploader/upload.html', form=form, daily_remaining_mb=daily_remaining_mb, demo_user=demo_user)
 
 @app.route('/review')
 def review_content():
     """Content review endpoint - shows all uploaded files for review"""
-    if current_user.is_banned:
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+    
+    if demo_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get uploads that need review (not from current user and not already reviewed by them)
-    # Show all uploads except those uploaded by current user
-    reviewed_upload_ids = [r.upload_id for r in current_user.reviews]
+    # Get uploads that need review (not from demo user and not already reviewed by them)
+    # Show all uploads except those uploaded by demo user
+    reviewed_upload_ids = [r.upload_id for r in demo_user.reviews]
     
     uploads = Upload.query.filter(
-        Upload.user_id != current_user.id,  # Cannot review own uploads
+        Upload.user_id != demo_user.id,  # Cannot review own uploads
         ~Upload.id.in_(reviewed_upload_ids)  # Haven't reviewed yet
     ).order_by(Upload.uploaded_at.desc()).all()
     
@@ -240,24 +251,24 @@ def review_content():
         if review_count < 5:  # Max 5 reviews per upload
             available_uploads.append(upload)
     
-    return render_template('reviewer/review.html', uploads=available_uploads)
+    return render_template('reviewer/review.html', uploads=available_uploads, demo_user=demo_user)
 
 @app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
 def review_upload(upload_id):
     """Review a specific upload"""
-    if current_user.is_banned:
+    if demo_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
     
     upload = Upload.query.get_or_404(upload_id)
     
     # Check if user can review this upload
-    if upload.user_id == current_user.id:
+    if upload.user_id == demo_user.id:
         flash('You cannot review your own uploads.', 'error')
         return redirect(url_for('review_content'))
     
     # Check if user already reviewed this upload
-    existing_review = Review.query.filter_by(upload_id=upload_id, reviewer_id=current_user.id).first()
+    existing_review = Review.query.filter_by(upload_id=upload_id, reviewer_id=demo_user.id).first()
     if existing_review:
         flash('You have already reviewed this upload.', 'error')
         return redirect(url_for('review_content'))
@@ -279,13 +290,13 @@ def review_upload(upload_id):
         # Create review
         review = Review()
         review.upload_id = upload.id
-        review.reviewer_id = current_user.id
+        review.reviewer_id = demo_user.id
         review.rating = form.rating.data
         review.description = form.description.data
         review.xp_earned = calculate_xp_reward('review')
         
         # Award XP to reviewer
-        current_user.xp_points += review.xp_earned
+        demo_user.xp_points += review.xp_earned
         
         db.session.add(review)
         db.session.commit()
@@ -337,7 +348,7 @@ def rate_website():
     if form.validate_on_submit():
         # Create rating record
         rating = Rating()
-        rating.user_id = current_user.id
+        rating.user_id = demo_user.id
         rating.rating = form.rating.data
         rating.category = form.category.data
         rating.description = form.description.data
@@ -354,11 +365,11 @@ def rate_website():
 @app.route('/profile')
 def profile():
     # Get user's strikes and violation history
-    strikes = Strike.query.filter_by(user_id=current_user.id)\
+    strikes = Strike.query.filter_by(user_id=demo_user.id)\
                          .order_by(Strike.created_at.desc()).all()
     
     # Get withdrawal requests
-    withdrawals = WithdrawalRequest.query.filter_by(user_id=current_user.id)\
+    withdrawals = WithdrawalRequest.query.filter_by(user_id=demo_user.id)\
                                         .order_by(WithdrawalRequest.created_at.desc()).all()
     
     return render_template('profile.html', strikes=strikes, withdrawals=withdrawals)
@@ -367,7 +378,7 @@ def profile():
 def delete_upload(upload_id):
     upload = Upload.query.get_or_404(upload_id)
     
-    if upload.user_id != current_user.id:
+    if upload.user_id != demo_user.id:
         flash('Access denied.', 'error')
         return redirect(url_for('dashboard'))
     
@@ -375,11 +386,11 @@ def delete_upload(upload_id):
     penalty = upload.get_deletion_penalty()
     
     if penalty > 0:
-        if current_user.xp_points < penalty:
-            flash(f'Insufficient XP to delete. Penalty: {penalty} XP (You have: {current_user.xp_points} XP)', 'error')
+        if demo_user.xp_points < penalty:
+            flash(f'Insufficient XP to delete. Penalty: {penalty} XP (You have: {demo_user.xp_points} XP)', 'error')
             return redirect(url_for('dashboard'))
         
-        current_user.xp_points -= penalty
+        demo_user.xp_points -= penalty
         flash(f'Content deleted with {penalty} XP penalty.', 'warning')
     else:
         flash('Content deleted within free window.', 'success')
@@ -403,7 +414,7 @@ def request_withdrawal():
     if form.validate_on_submit():
         amount_xp = form.amount_xp.data
         
-        if amount_xp > current_user.xp_points:
+        if amount_xp > demo_user.xp_points:
             flash('Insufficient XP points.', 'error')
             return render_template('profile.html', form=form)
         
@@ -415,7 +426,7 @@ def request_withdrawal():
         amount_usd = (amount_xp or 0) / 100.0
         
         withdrawal = WithdrawalRequest()
-        withdrawal.user_id = current_user.id
+        withdrawal.user_id = demo_user.id
         withdrawal.amount_xp = amount_xp
         withdrawal.amount_usd = amount_usd
         withdrawal.payment_method = form.payment_method.data
@@ -432,7 +443,7 @@ def request_withdrawal():
 @app.route('/admin')
 def admin_panel():
     # Simple admin check (in production, use proper role system)
-    if current_user.email not in ['admin@alphanex.com']:
+    if demo_user.email not in ['admin@alphanex.com']:
         flash('Access denied.', 'error')
         return redirect(url_for('dashboard'))
     
@@ -456,7 +467,7 @@ def admin_panel():
 def upload_status(upload_id):
     upload = Upload.query.get_or_404(upload_id)
     
-    if upload.user_id != current_user.id:
+    if upload.user_id != demo_user.id:
         return jsonify({'error': 'Access denied'}), 403
     
     time_remaining = upload.deletion_deadline - datetime.utcnow()
