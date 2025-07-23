@@ -55,7 +55,10 @@ class User(UserMixin, db.Model):
         return self.get_daily_upload_remaining() >= file_size and not self.is_banned
     
     def add_strike(self, strike_type, reason):
-        strike = Strike(user_id=self.id, strike_type=strike_type, reason=reason)
+        strike = Strike()
+        strike.user_id = self.id
+        strike.strike_type = strike_type
+        strike.reason = reason
         db.session.add(strike)
         
         if strike_type == 'uploader':
@@ -96,10 +99,11 @@ class Upload(db.Model):
         self.deletion_deadline = datetime.utcnow() + timedelta(hours=48)
     
     def get_average_rating(self):
-        if not self.reviews:
+        reviews_list = list(self.reviews)
+        if not reviews_list:
             return None
-        good_reviews = sum(1 for r in self.reviews if r.rating == 'good')
-        return good_reviews / len(self.reviews)
+        good_reviews = sum(1 for r in reviews_list if r.rating == 'good')
+        return good_reviews / len(reviews_list)
     
     def can_delete_free(self):
         return datetime.utcnow() < self.deletion_deadline

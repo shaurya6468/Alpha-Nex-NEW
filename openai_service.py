@@ -53,7 +53,8 @@ def detect_duplicate_content(file_path, description):
             max_tokens=150
         )
         
-        result = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        result = json.loads(content) if content else {}
         duplicate_score = max(0.0, min(1.0, result.get("duplicate_score", 0.0)))
         spam_score = max(0.0, min(1.0, result.get("spam_score", 0.0)))
         
@@ -101,7 +102,8 @@ def check_content_quality(content_text):
             max_tokens=50
         )
         
-        result = json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        result = json.loads(content) if content else {}
         return max(0.0, min(1.0, result.get("quality_score", 0.5)))
         
     except Exception as e:

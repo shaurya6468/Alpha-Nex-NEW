@@ -25,11 +25,10 @@ def signup():
     form = SignupForm()
     if form.validate_on_submit():
         # Create new user
-        user = User(
-            name=form.name.data,
-            email=form.email.data.lower(),
-            password_hash=generate_password_hash(form.password.data)
-        )
+        user = User()
+        user.name = form.name.data
+        user.email = form.email.data.lower() if form.email.data else ''
+        user.password_hash = generate_password_hash(form.password.data) if form.password.data else ''
         
         db.session.add(user)
         db.session.commit()
@@ -48,9 +47,10 @@ def login():
     
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data.lower()).first()
+        email_to_check = form.email.data.lower() if form.email.data else ''
+        user = User.query.filter_by(email=email_to_check).first()
         
-        if user and check_password_hash(user.password_hash, form.password.data):
+        if user and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
             if user.is_banned:
                 flash('Your account has been banned due to violations.', 'error')
                 return render_template('auth/login.html', form=form)
@@ -205,13 +205,12 @@ def review_content():
     
     if form.validate_on_submit():
         # Create review
-        review = Review(
-            upload_id=upload.id,
-            reviewer_id=current_user.id,
-            rating=form.rating.data,
-            description=form.description.data,
-            xp_earned=calculate_xp_reward('review')
-        )
+        review = Review()
+        review.upload_id = upload.id
+        review.reviewer_id = current_user.id
+        review.rating = form.rating.data
+        review.description = form.description.data
+        review.xp_earned = calculate_xp_reward('review')
         
         # Award XP to reviewer
         current_user.xp_points += review.xp_earned
@@ -290,13 +289,12 @@ def request_withdrawal():
         # Calculate USD amount (example: 100 XP = $1)
         amount_usd = amount_xp / 100.0
         
-        withdrawal = WithdrawalRequest(
-            user_id=current_user.id,
-            amount_xp=amount_xp,
-            amount_usd=amount_usd,
-            payment_method=form.payment_method.data,
-            payment_details=form.payment_details.data
-        )
+        withdrawal = WithdrawalRequest()
+        withdrawal.user_id = current_user.id
+        withdrawal.amount_xp = amount_xp
+        withdrawal.amount_usd = amount_usd
+        withdrawal.payment_method = form.payment_method.data
+        withdrawal.payment_details = form.payment_details.data
         
         db.session.add(withdrawal)
         db.session.commit()
