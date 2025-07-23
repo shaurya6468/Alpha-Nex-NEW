@@ -11,76 +11,114 @@ from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm,
 from utils import allowed_file, get_file_size, calculate_xp_reward
 from openai_service import detect_duplicate_content, check_content_quality
 
+def create_test_files(demo_user):
+    """Create test files for review demonstration"""
+    test_files = [
+        {
+            'filename': 'sample_video_tutorial.mp4',
+            'original_filename': 'Python Programming Tutorial - Basics.mp4',
+            'description': 'A comprehensive tutorial covering Python programming fundamentals including variables, loops, and functions.',
+            'category': 'video',
+            'file_size': 15728640  # 15MB
+        },
+        {
+            'filename': 'machine_learning_paper.pdf',
+            'original_filename': 'Deep Learning in Computer Vision - Research Paper.pdf',
+            'description': 'Academic research paper discussing the latest advances in deep learning techniques for computer vision applications.',
+            'category': 'document',
+            'file_size': 2097152  # 2MB
+        },
+        {
+            'filename': 'javascript_project.zip',
+            'original_filename': 'React E-commerce Project.zip',
+            'description': 'Complete React.js e-commerce website project with shopping cart, user authentication, and payment integration.',
+            'category': 'code',
+            'file_size': 5242880  # 5MB
+        },
+        {
+            'filename': 'nature_sounds.mp3',
+            'original_filename': 'Relaxing Forest Sounds - 1 Hour.mp3',
+            'description': 'High-quality audio recording of peaceful forest sounds including birds chirping and gentle wind through trees.',
+            'category': 'audio',
+            'file_size': 8388608  # 8MB
+        },
+        {
+            'filename': 'website_design.png',
+            'original_filename': 'Modern UI Design Mockup.png',
+            'description': 'Professional website design mockup showcasing modern UI/UX principles with clean layouts and responsive design.',
+            'category': 'image',
+            'file_size': 1048576  # 1MB
+        }
+    ]
+    
+    for test_file in test_files:
+        # Check if this test file already exists
+        existing = Upload.query.filter_by(filename=test_file['filename']).first()
+        if not existing:
+            upload = Upload()
+            upload.user_id = demo_user.id
+            upload.filename = test_file['filename']
+            upload.original_filename = test_file['original_filename']
+            upload.file_path = f"uploads/test_{test_file['filename']}"
+            upload.file_size = test_file['file_size']
+            upload.description = test_file['description']
+            upload.category = test_file['category']
+            upload.status = 'pending'
+            upload.ai_consent = True
+            
+            db.session.add(upload)
+    
+    db.session.commit()
+
 @app.route('/')
 def index():
-    """Landing page for Alpha Nex platform"""
-    return render_template('index.html')
+    """Landing page redirects directly to dashboard"""
+    return redirect(url_for('dashboard'))
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    """User registration endpoint"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    
-    form = SignupForm()
-    if form.validate_on_submit():
-        # Create new user
-        user = User()
-        user.name = form.name.data
-        user.email = form.email.data.lower() if form.email.data else ''
-        user.password_hash = generate_password_hash(form.password.data) if form.password.data else ''
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Account created successfully! You can now start uploading and reviewing content.', 'success')
-        login_user(user)
-        return redirect(url_for('dashboard'))
-    
-    return render_template('auth/signup.html', form=form)
+# Authentication routes removed - direct access to dashboard
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """User authentication endpoint"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    
-    form = LoginForm()
-    if form.validate_on_submit():
-        email_to_check = form.email.data.lower() if form.email.data else ''
-        user = User.query.filter_by(email=email_to_check).first()
-        
-        if user and user.password_hash and form.password.data and check_password_hash(user.password_hash, form.password.data):
-            if user.is_banned:
-                flash('Your account has been banned due to violations.', 'error')
-                return render_template('auth/login.html', form=form)
-            
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid email or password.', 'error')
-    
-    return render_template('auth/login.html', form=form)
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
+# Logout functionality not needed without authentication
 
 @app.route('/dashboard')
-@login_required
 def dashboard():
+    # Create or get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        demo_user = User()
+        demo_user.name = 'Demo User'
+        demo_user.email = 'demo@alphanex.com'
+        demo_user.password_hash = generate_password_hash('demo123')
+        demo_user.xp_points = 500  # Give some starting XP
+        db.session.add(demo_user)
+        db.session.commit()
+    
+    # Create or get a second demo user for test files
+    test_user = User.query.filter_by(email='testuser@alphanex.com').first()
+    if not test_user:
+        test_user = User()
+        test_user.name = 'Test User'
+        test_user.email = 'testuser@alphanex.com'
+        test_user.password_hash = generate_password_hash('test123')
+        test_user.xp_points = 300
+        db.session.add(test_user)
+        db.session.commit()
+        
+        # Create test files from test user for demo user to review
+        create_test_files(test_user)
+    
+    # Simulate login for the demo user
+    login_user(demo_user)
+    
     # Get user stats
-    upload_count = Upload.query.filter_by(user_id=current_user.id).count()
-    review_count = Review.query.filter_by(reviewer_id=current_user.id).count()
+    upload_count = Upload.query.filter_by(user_id=demo_user.id).count()
+    review_count = Review.query.filter_by(reviewer_id=demo_user.id).count()
     
     # Get recent uploads
-    recent_uploads = Upload.query.filter_by(user_id=current_user.id)\
+    recent_uploads = Upload.query.filter_by(user_id=demo_user.id)\
                                 .order_by(Upload.uploaded_at.desc()).limit(5).all()
     
     # Check daily upload limit
-    daily_remaining = current_user.get_daily_upload_remaining()
+    daily_remaining = demo_user.get_daily_upload_remaining()
     daily_remaining_mb = daily_remaining / (1024 * 1024)
     
     return render_template('dashboard.html', 
@@ -90,7 +128,6 @@ def dashboard():
                          daily_remaining_mb=daily_remaining_mb)
 
 @app.route('/upload', methods=['GET', 'POST'])
-@login_required
 def upload_file():
     """File upload endpoint"""
     if current_user.is_banned:
@@ -181,7 +218,6 @@ def upload_file():
     return render_template('uploader/upload.html', form=form, daily_remaining_mb=daily_remaining_mb)
 
 @app.route('/review')
-@login_required
 def review_content():
     """Content review endpoint - shows all uploaded files for review"""
     if current_user.is_banned:
@@ -207,7 +243,6 @@ def review_content():
     return render_template('reviewer/review.html', uploads=available_uploads)
 
 @app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
-@login_required
 def review_upload(upload_id):
     """Review a specific upload"""
     if current_user.is_banned:
@@ -317,7 +352,6 @@ def rate_website():
     return render_template('rating.html', form=form)
 
 @app.route('/profile')
-@login_required
 def profile():
     # Get user's strikes and violation history
     strikes = Strike.query.filter_by(user_id=current_user.id)\
@@ -330,7 +364,6 @@ def profile():
     return render_template('profile.html', strikes=strikes, withdrawals=withdrawals)
 
 @app.route('/delete_upload/<int:upload_id>')
-@login_required
 def delete_upload(upload_id):
     upload = Upload.query.get_or_404(upload_id)
     
@@ -364,7 +397,6 @@ def delete_upload(upload_id):
     return redirect(url_for('dashboard'))
 
 @app.route('/request_withdrawal', methods=['GET', 'POST'])
-@login_required
 def request_withdrawal():
     form = WithdrawalForm()
     
@@ -398,7 +430,6 @@ def request_withdrawal():
     return render_template('profile.html', withdrawal_form=form)
 
 @app.route('/admin')
-@login_required
 def admin_panel():
     # Simple admin check (in production, use proper role system)
     if current_user.email not in ['admin@alphanex.com']:
