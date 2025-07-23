@@ -153,7 +153,8 @@ def analyze_content_description(description, category):
             max_tokens=300
         )
         
-        return json.loads(response.choices[0].message.content)
+        content = response.choices[0].message.content
+        return json.loads(content) if content else {}
         
     except Exception as e:
         print(f"Content analysis failed: {e}")

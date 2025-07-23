@@ -375,12 +375,12 @@ def request_withdrawal():
             flash('Insufficient XP points.', 'error')
             return render_template('profile.html', form=form)
         
-        if amount_xp < 100:
+        if amount_xp and amount_xp < 100:
             flash('Minimum withdrawal is 100 XP.', 'error')
             return render_template('profile.html', form=form)
         
         # Calculate USD amount (example: 100 XP = $1)
-        amount_usd = amount_xp / 100.0
+        amount_usd = (amount_xp or 0) / 100.0
         
         withdrawal = WithdrawalRequest()
         withdrawal.user_id = current_user.id
