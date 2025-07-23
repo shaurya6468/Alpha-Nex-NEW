@@ -256,6 +256,11 @@ def review_content():
 @app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
 def review_upload(upload_id):
     """Review a specific upload"""
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     if demo_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
@@ -337,7 +342,7 @@ def review_upload(upload_id):
     existing_reviews = Review.query.filter_by(upload_id=upload_id).all()
     
     return render_template('reviewer/review_upload.html', upload=upload, form=form, 
-                         existing_reviews=existing_reviews, review_count=len(existing_reviews))
+                         existing_reviews=existing_reviews, review_count=len(existing_reviews), demo_user=demo_user)
 
 @app.route('/rating', methods=['GET', 'POST'])
 @login_required
