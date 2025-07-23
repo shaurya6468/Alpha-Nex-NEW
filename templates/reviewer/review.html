@@ -1,302 +1,109 @@
 {% extends "base.html" %}
 
-{% block title %}Review Content - Alpha Nex{% endblock %}
+{% block title %}Review Content{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Content Review -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="fw-bold text-black mb-0">
-                        <i class="fas fa-star me-2"></i>Review Content Quality
+<div class="container my-5">
+    <div class="row">
+        <div class="col">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-star me-2"></i>Content Review Center
                     </h4>
-                    <span class="badge bg-success"><i class="fas fa-coins me-1"></i>+10 XP per review</span>
+                    <p class="mb-0 mt-2 text-light">Review uploads from other users - max 5 reviews per file</p>
                 </div>
-            </div>
-            <div class="card-body p-4">
-                <!-- Content Information (Horizontal Layout) -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-dark text-white rounded p-2 me-3">
-                                <i class="fas fa-{% if upload.category == 'video' %}video{% elif upload.category == 'audio' %}music{% elif upload.category == 'document' %}file-pdf{% elif upload.category == 'code' %}code{% elif upload.category == 'text' %}file-alt{% else %}image{% endif %} fa-lg"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold text-black mb-1">{{ upload.original_filename }}</h6>
-                                <div class="d-flex gap-3">
-                                    <small class="text-muted">
-                                        <i class="fas fa-tag me-1"></i>{{ upload.category.title() }}
-                                    </small>
-                                    <small class="text-muted">
-                                        <i class="fas fa-hdd me-1"></i>{{ "%.1f"|format(upload.file_size / 1024 / 1024) }} MB
-                                    </small>
+                <div class="card-body p-4">
+                    {% if uploads %}
+                    <div class="row">
+                        {% for upload in uploads %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h6 class="fw-bold mb-0">{{ upload.original_filename[:30] }}{% if upload.original_filename|length > 30 %}...{% endif %}</h6>
+                                        <span class="badge bg-light text-dark">{{ upload.category.title() }}</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-file me-1"></i>{{ "%.1f"|format(upload.file_size / 1024 / 1024) }} MB
+                                            <i class="fas fa-clock ms-2 me-1"></i>{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}
+                                        </small>
+                                    </div>
+                                    
+                                    <p class="text-muted small mb-3">{{ upload.description[:100] }}{% if upload.description|length > 100 %}...{% endif %}</p>
+                                    
+                                    <!-- Review Progress -->
+                                    {% set review_count = upload.reviews|length %}
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-muted">Reviews: {{ review_count }}/5</small>
+                                            <small class="text-muted">
+                                                {% if review_count >= 5 %}Complete{% else %}{{ 5 - review_count }} remaining{% endif %}
+                                            </small>
+                                        </div>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar bg-dark" style="width: {{ (review_count / 5 * 100)|round }}%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if review_count < 5 %}
+                                    <a href="{{ url_for('review_upload', upload_id=upload.id) }}" class="btn btn-dark btn-sm w-100">
+                                        <i class="fas fa-star me-2"></i>Review This File (+10 XP)
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-secondary btn-sm w-100" disabled>
+                                        <i class="fas fa-check me-2"></i>Review Complete
+                                    </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex gap-3 justify-content-md-end">
-                            <div class="text-center">
-                                <div class="fw-bold text-black">{{ upload.uploaded_at.strftime('%Y-%m-%d') }}</div>
-                                <small class="text-muted">Upload Date</small>
-                            </div>
-                            <div class="text-center">
-                                <div class="fw-bold text-black">{{ upload.reviews|length }}</div>
-                                <small class="text-muted">Reviews</small>
-                            </div>
-                            <div class="text-center">
-                                {% set avg_rating = upload.get_average_rating() %}
-                                <div class="fw-bold text-black">
-                                    {% if avg_rating %}{{ (avg_rating * 100)|round }}%{% else %}New{% endif %}
-                                </div>
-                                <small class="text-muted">Quality Score</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Content Description -->
-                <div class="mb-4">
-                    <h6 class="fw-bold text-black mb-2">Content Description</h6>
-                    <div class="bg-light rounded p-3">
-                        <p class="mb-0">{{ upload.description }}</p>
-                    </div>
-                </div>
-                
-                <!-- AI Analysis Results (if available) -->
-                {% if upload.duplicate_score > 0 or upload.spam_score > 0 %}
-                <div class="mb-4">
-                    <h6 class="fw-bold text-black mb-2">AI Analysis Results</h6>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="card border-0 bg-light">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-medium">Duplicate Score</span>
-                                        <span class="badge bg-{% if upload.duplicate_score > 0.7 %}danger{% elif upload.duplicate_score > 0.4 %}warning{% else %}success{% endif %}">
-                                            {{ (upload.duplicate_score * 100)|round }}%
-                                        </span>
-                                    </div>
-                                    <div class="progress mt-2" style="height: 4px;">
-                                        <div class="progress-bar bg-{% if upload.duplicate_score > 0.7 %}danger{% elif upload.duplicate_score > 0.4 %}warning{% else %}success{% endif %}" 
-                                             style="width: {{ (upload.duplicate_score * 100)|round }}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card border-0 bg-light">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-medium">Spam Score</span>
-                                        <span class="badge bg-{% if upload.spam_score > 0.7 %}danger{% elif upload.spam_score > 0.4 %}warning{% else %}success{% endif %}">
-                                            {{ (upload.spam_score * 100)|round }}%
-                                        </span>
-                                    </div>
-                                    <div class="progress mt-2" style="height: 4px;">
-                                        <div class="progress-bar bg-{% if upload.spam_score > 0.7 %}danger{% elif upload.spam_score > 0.4 %}warning{% else %}success{% endif %}" 
-                                             style="width: {{ (upload.spam_score * 100)|round }}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Review Form -->
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    
-                    <!-- Rating Selection (Horizontal) -->
-                    <div class="mb-4">
-                        {{ form.rating.label(class="form-label fw-medium") }}
-                        <div class="row g-2">
-                            {% for value, label in form.rating.choices %}
-                            <div class="col-md-6">
-                                <input type="radio" class="btn-check" name="rating" id="rating_{{ value }}" value="{{ value }}" autocomplete="off">
-                                <label class="btn btn-outline-{% if value == 'good' %}success{% else %}danger{% endif %} w-100 text-start" for="rating_{{ value }}">
-                                    <i class="fas fa-{% if value == 'good' %}thumbs-up{% else %}thumbs-down{% endif %} me-2"></i>
-                                    <div>
-                                        <div class="fw-medium">{{ label.split(' - ')[0] }}</div>
-                                        <small class="text-muted">{{ label.split(' - ')[1] if ' - ' in label else '' }}</small>
-                                    </div>
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% for error in form.rating.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    
-                    <!-- Review Description -->
-                    <div class="mb-4">
-                        {{ form.description.label(class="form-label fw-medium") }}
-                        {{ form.description(class="form-control", rows="4") }}
-                        <div class="form-text d-flex justify-content-between">
-                            <span>Provide detailed feedback about the content quality, relevance, and appropriateness.</span>
-                            <span id="reviewCount">0/500</span>
-                        </div>
-                        {% for error in form.description.errors %}
-                        <div class="text-danger small mt-1">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Submit Review -->
-                    <div class="d-flex gap-3 justify-content-between align-items-center">
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h5>No Content Available for Review</h5>
+                        <p class="text-muted">You've reviewed all available uploads or there are no new uploads to review.</p>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-dark">
                             <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
                         </a>
-                        <button type="submit" class="btn btn-dark btn-lg" id="submitReview" disabled>
-                            <i class="fas fa-paper-plane me-2"></i>Submit Review (+10 XP)
-                        </button>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Review Guidelines -->
-    <div class="col-lg-4">
-        <!-- Review Guidelines -->
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h6 class="fw-bold text-black mb-0">
-                    <i class="fas fa-clipboard-list me-2"></i>Review Guidelines
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <h6 class="text-success mb-2">
-                        <i class="fas fa-thumbs-up me-2"></i>Rate as "Good" if:
-                    </h6>
-                    <ul class="list-unstyled small text-muted">
-                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>High quality content</li>
-                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Accurate description</li>
-                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i>Relevant and useful</li>
-                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Proper categorization</li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h6 class="text-danger mb-2">
-                        <i class="fas fa-thumbs-down me-2"></i>Rate as "Bad" if:
-                    </h6>
-                    <ul class="list-unstyled small text-muted">
-                        <li class="mb-1"><i class="fas fa-times text-danger me-2"></i>Poor quality or corrupt</li>
-                        <li class="mb-1"><i class="fas fa-times text-danger me-2"></i>Misleading description</li>
-                        <li class="mb-1"><i class="fas fa-times text-danger me-2"></i>Inappropriate content</li>
-                        <li class="mb-0"><i class="fas fa-times text-danger me-2"></i>Wrong category or spam</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Your Review Stats -->
-        <div class="card border-0 bg-light mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="fw-bold text-black mb-0">Your Review Stats</h6>
-                    <i class="fas fa-chart-bar text-muted"></i>
-                </div>
-                <div class="row text-center g-3">
-                    <div class="col-4">
-                        <div class="fw-bold text-black">{{ current_user.reviews|length }}</div>
-                        <small class="text-muted">Total Reviews</small>
-                    </div>
-                    <div class="col-4">
-                        <div class="fw-bold text-black">{{ current_user.xp_points }}</div>
-                        <small class="text-muted">XP Earned</small>
-                    </div>
-                    <div class="col-4">
-                        <div class="fw-bold text-{% if current_user.reviewer_strikes == 0 %}success{% else %}warning{% endif %}">
-                            {{ current_user.reviewer_strikes }}/3
-                        </div>
-                        <small class="text-muted">Strikes</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Strike Warning -->
-        {% if current_user.reviewer_strikes > 0 %}
-        <div class="card border-0 bg-danger bg-opacity-10 border-danger">
-            <div class="card-body">
-                <h6 class="fw-bold text-danger mb-2">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Review Quality Warning
-                </h6>
-                <p class="small text-muted mb-2">
-                    You have <strong>{{ current_user.reviewer_strikes }}/3 strikes</strong> for poor review quality.
-                </p>
-                <small class="text-danger">
-                    {% if current_user.reviewer_strikes >= 3 %}
-                    Your review privileges have been revoked.
-                    {% else %}
-                    {{ 3 - current_user.reviewer_strikes }} more strikes will result in review ban.
                     {% endif %}
-                </small>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- XP Rewards Info -->
-        <div class="card border-0 bg-success bg-opacity-10 border-success">
-            <div class="card-body">
-                <h6 class="fw-bold text-success mb-2">
-                    <i class="fas fa-coins me-2"></i>Earn XP Points
-                </h6>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="small">Per Review:</span>
-                    <span class="fw-medium text-success">+10 XP</span>
                 </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="small">Quality Bonus:</span>
-                    <span class="fw-medium text-success">+5 XP</span>
-                </div>
-                <small class="text-muted">
-                    Quality reviews help maintain platform standards and earn bonus XP points.
-                </small>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-const reviewTextarea = document.querySelector('textarea[name="description"]');
-const reviewCount = document.getElementById('reviewCount');
-const submitBtn = document.getElementById('submitReview');
-
-// Character counter
-reviewTextarea.addEventListener('input', function() {
-    const count = this.value.length;
-    reviewCount.textContent = `${count}/500`;
-    validateForm();
-});
-
-// Rating selection
-document.querySelectorAll('input[name="rating"]').forEach(radio => {
-    radio.addEventListener('change', validateForm);
-});
-
-function validateForm() {
-    const hasRating = document.querySelector('input[name="rating"]:checked');
-    const hasDescription = reviewTextarea.value.trim().length >= 20;
     
-    submitBtn.disabled = !(hasRating && hasDescription);
-}
-
-// Initial validation
-validateForm();
-
-// Form submission analytics
-document.querySelector('form').addEventListener('submit', function(e) {
-    const rating = document.querySelector('input[name="rating"]:checked').value;
-    console.log(`Review submitted: ${rating} rating with ${reviewTextarea.value.length} character description`);
-});
-</script>
+    <!-- Review Rules Card -->
+    {% if uploads %}
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-2"><i class="fas fa-gavel me-2"></i>Review System Rules</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="mb-0 small text-muted">
+                                <li>Maximum 5 reviews per upload</li>
+                                <li>Cannot review your own uploads</li>
+                                <li>Earn 10 XP for each review submitted</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="mb-0 small text-muted">
+                                <li>3+ positive reviews = Upload approved + uploader gets bonus XP</li>
+                                <li>3+ negative reviews = Upload denied + uploader loses XP</li>
+                                <li>Negative reviews must include detailed reasoning</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

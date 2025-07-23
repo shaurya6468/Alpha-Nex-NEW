@@ -119,16 +119,16 @@ def upload_file():
                 file.save(file_path)
                 
                 # Create upload record
-                upload = Upload(
-                    user_id=current_user.id,
-                    filename=unique_filename,
-                    original_filename=filename,
-                    file_path=file_path,
-                    file_size=file_size,
-                    description=form.description.data,
-                    category=form.category.data,
-                    ai_consent=form.ai_consent.data
-                )
+                upload = Upload()
+                upload.user_id = current_user.id
+                upload.filename = unique_filename
+                upload.original_filename = filename
+                upload.file_path = file_path
+                upload.file_size = file_size
+                upload.description = form.description.data
+                upload.category = form.category.data
+                upload.ai_consent = form.ai_consent.data
+                upload.status = 'pending'  # Set initial status to pending review
                 
                 # Update user's daily upload count and award XP
                 current_user.daily_upload_bytes += file_size
@@ -183,27 +183,64 @@ def upload_file():
 @app.route('/review')
 @login_required
 def review_content():
-    """Content review endpoint"""
+    """Content review endpoint - shows all uploaded files for review"""
     if current_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
     
     # Get uploads that need review (not from current user and not already reviewed by them)
+    # Show all uploads except those uploaded by current user
     reviewed_upload_ids = [r.upload_id for r in current_user.reviews]
     
-    upload = Upload.query.filter(
-        Upload.user_id != current_user.id,
-        Upload.status == 'approved',
-        ~Upload.id.in_(reviewed_upload_ids)
-    ).first()
+    uploads = Upload.query.filter(
+        Upload.user_id != current_user.id,  # Cannot review own uploads
+        ~Upload.id.in_(reviewed_upload_ids)  # Haven't reviewed yet
+    ).order_by(Upload.uploaded_at.desc()).all()
     
-    if not upload:
-        flash('No content available for review at this time.', 'info')
+    # Filter out uploads that already have 5 reviews (max reached)
+    available_uploads = []
+    for upload in uploads:
+        review_count = Review.query.filter_by(upload_id=upload.id).count()
+        if review_count < 5:  # Max 5 reviews per upload
+            available_uploads.append(upload)
+    
+    return render_template('reviewer/review.html', uploads=available_uploads)
+
+@app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
+@login_required
+def review_upload(upload_id):
+    """Review a specific upload"""
+    if current_user.is_banned:
+        flash('Your account is banned and cannot review content.', 'error')
         return redirect(url_for('dashboard'))
+    
+    upload = Upload.query.get_or_404(upload_id)
+    
+    # Check if user can review this upload
+    if upload.user_id == current_user.id:
+        flash('You cannot review your own uploads.', 'error')
+        return redirect(url_for('review_content'))
+    
+    # Check if user already reviewed this upload
+    existing_review = Review.query.filter_by(upload_id=upload_id, reviewer_id=current_user.id).first()
+    if existing_review:
+        flash('You have already reviewed this upload.', 'error')
+        return redirect(url_for('review_content'))
+    
+    # Check if upload already has 5 reviews (max limit)
+    review_count = Review.query.filter_by(upload_id=upload_id).count()
+    if review_count >= 5:
+        flash('This upload has reached the maximum number of reviews (5).', 'error')
+        return redirect(url_for('review_content'))
     
     form = ReviewForm()
     
     if form.validate_on_submit():
+        # Validate that bad reviews must have a reason
+        if form.rating.data == 'bad' and (not form.description.data or len(form.description.data.strip()) < 10):
+            flash('You must provide a detailed reason (at least 10 characters) for negative reviews.', 'error')
+            return render_template('reviewer/review_upload.html', upload=upload, form=form)
+        
         # Create review
         review = Review()
         review.upload_id = upload.id
@@ -218,10 +255,43 @@ def review_content():
         db.session.add(review)
         db.session.commit()
         
-        flash(f'Review submitted! You earned {review.xp_earned} XP points.', 'success')
+        # Check if this is the 5th review - make final decision
+        total_reviews = Review.query.filter_by(upload_id=upload_id).count()
+        if total_reviews >= 5:
+            # Calculate final decision based on majority vote
+            good_reviews = Review.query.filter_by(upload_id=upload_id, rating='good').count()
+            bad_reviews = Review.query.filter_by(upload_id=upload_id, rating='bad').count()
+            
+            if good_reviews >= 3:
+                # Upload accepted - award XP to uploader
+                upload.status = 'approved'
+                uploader = User.query.get(upload.user_id)
+                if uploader:
+                    uploader.xp_points += calculate_xp_reward('upload_approved')
+                flash(f'Review submitted! Upload approved with {good_reviews} positive reviews. You earned {review.xp_earned} XP!', 'success')
+            elif bad_reviews >= 3:
+                # Upload denied - take XP from uploader
+                upload.status = 'rejected'
+                uploader = User.query.get(upload.user_id)
+                if uploader:
+                    penalty = calculate_xp_reward('upload')  # Same amount as upload reward
+                    uploader.xp_points = max(0, uploader.xp_points - penalty)  # Don't go below 0
+                flash(f'Review submitted! Upload denied with {bad_reviews} negative reviews. You earned {review.xp_earned} XP!', 'success')
+            else:
+                upload.status = 'pending'  # Still needs more reviews
+                flash(f'Review submitted! Upload still pending ({total_reviews}/5 reviews complete). You earned {review.xp_earned} XP!', 'success')
+            
+            db.session.commit()
+        else:
+            flash(f'Review submitted! You earned {review.xp_earned} XP. Upload has {total_reviews}/5 reviews.', 'success')
+        
         return redirect(url_for('review_content'))
     
-    return render_template('reviewer/review.html', upload=upload, form=form)
+    # Get existing reviews for this upload
+    existing_reviews = Review.query.filter_by(upload_id=upload_id).all()
+    
+    return render_template('reviewer/review_upload.html', upload=upload, form=form, 
+                         existing_reviews=existing_reviews, review_count=len(existing_reviews))
 
 @app.route('/profile')
 @login_required

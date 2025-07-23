@@ -38,6 +38,7 @@ def calculate_xp_reward(action_type):
     """Calculate XP reward for different platform actions."""
     rewards = {
         'upload': 20,  # File upload reward
+        'upload_approved': 10,  # Bonus XP when upload gets approved
         'review': 10,  # Content review reward
         'quality_bonus': 5,  # High quality bonus
         'daily_login': 5  # Daily engagement
