@@ -11,7 +11,7 @@ from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm,
 from utils import allowed_file, get_file_size, calculate_xp_reward
 from openai_service import detect_duplicate_content, check_content_quality
 
-def create_test_files(demo_user):
+def create_test_files(test_user):
     """Create test files for review demonstration"""
     test_files = [
         {
@@ -48,6 +48,76 @@ def create_test_files(demo_user):
             'description': 'Professional website design mockup showcasing modern UI/UX principles with clean layouts and responsive design.',
             'category': 'image',
             'file_size': 1048576  # 1MB
+        },
+        {
+            'filename': 'react_masterclass.mp4',
+            'original_filename': 'React.js Advanced Concepts.mp4',
+            'description': 'In-depth React.js tutorial covering hooks, context API, performance optimization, and advanced state management patterns.',
+            'category': 'video',
+            'file_size': 42000000  # 42MB
+        },
+        {
+            'filename': 'cybersecurity_podcast.wav',
+            'original_filename': 'Cybersecurity Weekly Episode 15.wav',
+            'description': 'Latest cybersecurity trends discussion including zero-trust architecture, endpoint security, and threat intelligence.',
+            'category': 'audio',
+            'file_size': 28800000  # 28.8MB
+        },
+        {
+            'filename': 'api_documentation.pdf',
+            'original_filename': 'RESTful API Design Guide.pdf',
+            'description': 'Comprehensive guide to designing scalable REST APIs with best practices, authentication methods, and documentation standards.',
+            'category': 'document',
+            'file_size': 3072000  # 3MB
+        },
+        {
+            'filename': 'algorithm_implementation.py',
+            'original_filename': 'data_structures_algorithms.py',
+            'description': 'Python implementation of essential data structures and algorithms including binary trees, graphs, and dynamic programming.',
+            'category': 'code',
+            'file_size': 256000  # 256KB
+        },
+        {
+            'filename': 'database_schema.png',
+            'original_filename': 'E-commerce Database Design.png',
+            'description': 'Detailed database schema diagram for a scalable e-commerce platform with proper normalization and indexing strategies.',
+            'category': 'image',
+            'file_size': 1536000  # 1.5MB
+        },
+        {
+            'filename': 'devops_tutorial.avi',
+            'original_filename': 'Docker & Kubernetes Tutorial.avi',
+            'description': 'Complete DevOps tutorial covering containerization with Docker, orchestration with Kubernetes, and CI/CD pipeline setup.',
+            'category': 'video',
+            'file_size': 38400000  # 38.4MB
+        },
+        {
+            'filename': 'tech_interview.m4a',
+            'original_filename': 'Software Engineering Interview Prep.m4a',
+            'description': 'Mock technical interview session covering system design, coding challenges, and behavioral questions for senior developers.',
+            'category': 'audio',
+            'file_size': 22528000  # 22.5MB
+        },
+        {
+            'filename': 'ml_research_notes.txt',
+            'original_filename': 'Machine Learning Research Notes.txt',
+            'description': 'Detailed notes on latest machine learning research including transformer architectures, attention mechanisms, and neural networks.',
+            'category': 'document',
+            'file_size': 512000  # 512KB
+        },
+        {
+            'filename': 'web_performance.js',
+            'original_filename': 'performance_optimization_utils.js',
+            'description': 'JavaScript utilities for web performance optimization including lazy loading, code splitting, and cache management.',
+            'category': 'code',
+            'file_size': 307200  # 300KB
+        },
+        {
+            'filename': 'system_architecture.svg',
+            'original_filename': 'Microservices Architecture Diagram.svg',
+            'description': 'Scalable microservices architecture diagram showing service communication, load balancing, and database distribution.',
+            'category': 'image',
+            'file_size': 204800  # 200KB
         }
     ]
     
@@ -56,7 +126,7 @@ def create_test_files(demo_user):
         existing = Upload.query.filter_by(filename=test_file['filename']).first()
         if not existing:
             upload = Upload()
-            upload.user_id = demo_user.id
+            upload.user_id = test_user.id
             upload.filename = test_file['filename']
             upload.original_filename = test_file['original_filename']
             upload.file_path = f"uploads/test_{test_file['filename']}"
