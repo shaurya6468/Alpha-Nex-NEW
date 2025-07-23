@@ -22,11 +22,7 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
 
 class UploadForm(FlaskForm):
-    file = FileField('File', validators=[
-        FileRequired(),
-        FileAllowed(['pdf', 'mp4', 'mp3', 'wav', 'txt', 'py', 'js', 'html', 'css', 'jpg', 'png'], 
-                   'Allowed file types: PDF, Video (MP4), Audio (MP3, WAV), Text, Code, Images')
-    ])
+    file = FileField('File', validators=[FileRequired()])
     description = TextAreaField('Description', validators=[DataRequired(), Length(min=10, max=1000)])
     category = SelectField('Category', validators=[DataRequired()], choices=[
         ('video', 'Video'),
@@ -34,7 +30,8 @@ class UploadForm(FlaskForm):
         ('document', 'Document/PDF'),
         ('code', 'Code'),
         ('text', 'Text'),
-        ('image', 'Image')
+        ('image', 'Image'),
+        ('archive', 'Archive')
     ])
     ai_consent = BooleanField(
         'I agree that this content belongs to me, does not violate any rules, and can be used by AI companies for training',

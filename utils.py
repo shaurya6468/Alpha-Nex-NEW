@@ -4,11 +4,13 @@ from werkzeug.utils import secure_filename
 # Alpha Nex Utility Functions
 
 ALLOWED_EXTENSIONS = {
-    'video': ['mp4', 'avi', 'mov', 'wmv'],
-    'audio': ['mp3', 'wav', 'aac', 'm4a'],
-    'document': ['pdf', 'doc', 'docx', 'txt'],
-    'code': ['py', 'js', 'html', 'css', 'java', 'cpp', 'c'],
-    'image': ['jpg', 'jpeg', 'png', 'gif', 'bmp']
+    'video': ['mp4', 'avi', 'mov', 'wmv', 'mkv', 'flv', 'webm', 'ogv', '3gp', 'mpg', 'mpeg', 'ts', 'mts', 'm2ts'],
+    'audio': ['mp3', 'wav', 'aac', 'm4a', 'flac', 'ogg', 'wma', 'amr', 'aiff', 'ac3', 'opus'],
+    'document': ['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt', 'pages', 'epub', 'mobi', 'xls', 'xlsx', 'ppt', 'pptx', 'csv'],
+    'code': ['py', 'js', 'html', 'css', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'scala', 'r', 'sql', 'sh', 'bat', 'ps1', 'json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'md', 'rst', 'tex', 'log'],
+    'image': ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp', 'svg', 'ico', 'psd', 'ai', 'eps', 'raw', 'cr2', 'nef', 'arw'],
+    'archive': ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'lzma'],
+    'text': ['txt', 'md', 'rst', 'log', 'readme', 'license', 'changelog']
 }
 
 def allowed_file(filename):

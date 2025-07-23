@@ -130,8 +130,10 @@ def upload_file():
                     ai_consent=form.ai_consent.data
                 )
                 
-                # Update user's daily upload count
+                # Update user's daily upload count and award XP
                 current_user.daily_upload_bytes += file_size
+                upload_xp = calculate_xp_reward('upload')
+                current_user.xp_points += upload_xp
                 
                 db.session.add(upload)
                 db.session.commit()
@@ -151,7 +153,7 @@ def upload_file():
                 except Exception as e:
                     app.logger.error(f"AI analysis failed: {e}")
                 
-                flash('File uploaded successfully! Status: Pending - Will be approved within 24 hours.', 'success')
+                flash(f'✅ Upload Complete! File "{filename}" has been successfully uploaded and saved. Status: Pending Review (will be approved within 24 hours). You earned {upload_xp} XP points!', 'success')
                 return redirect(url_for('dashboard'))
                 
             except Exception as e:
