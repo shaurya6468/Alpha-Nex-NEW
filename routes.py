@@ -158,7 +158,7 @@ def dashboard():
         demo_user.name = 'Demo User'
         demo_user.email = 'demo@alphanex.com'
         demo_user.password_hash = generate_password_hash('demo123')
-        demo_user.xp_points = 500  # Give some starting XP
+        demo_user.xp_points = 1600  # Set XP above threshold to test the feature
         db.session.add(demo_user)
         db.session.commit()
     
@@ -191,12 +191,16 @@ def dashboard():
     daily_remaining = demo_user.get_daily_upload_remaining()
     daily_remaining_mb = daily_remaining / (1024 * 1024)
     
+    # Check if user has reached XP threshold requiring account creation
+    xp_threshold_reached = demo_user.xp_points >= 1500
+    
     return render_template('dashboard.html', 
                          upload_count=upload_count,
                          review_count=review_count,
                          recent_uploads=recent_uploads,
                          daily_remaining_mb=daily_remaining_mb,
-                         demo_user=demo_user)
+                         demo_user=demo_user,
+                         xp_threshold_reached=xp_threshold_reached)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -204,6 +208,11 @@ def upload_file():
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
+        return redirect(url_for('dashboard'))
+    
+    # Check XP threshold
+    if demo_user.xp_points >= 1500:
+        flash('You have reached 1500 XP! Please create an account to continue using Alpha Nex.', 'warning')
         return redirect(url_for('dashboard'))
         
     if demo_user.is_banned:

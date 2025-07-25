@@ -60,6 +60,30 @@
 </div>
 {% endif %}
 
+<!-- XP Threshold Message (Account Creation Required) -->
+{% if xp_threshold_reached %}
+<div class="alert alert-info border-0 mb-4">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-star fa-lg text-warning me-3"></i>
+        <div class="flex-grow-1">
+            <h6 class="fw-bold mb-1">Congratulations! You've reached 1500 XP!</h6>
+            <p class="mb-0">
+                <strong>It is now mandatory to create an account</strong> to continue using Alpha Nex. 
+                You've been using our platform for free up to this point, but now you need to sign up to keep earning XP and accessing features.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" onclick="alert('Account creation feature will be available soon!')">
+                <i class="fas fa-user-plus me-1"></i>Create Account
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="alert('Login feature will be available soon!')">
+                <i class="fas fa-sign-in-alt me-1"></i>Login
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Stats Cards (Horizontal Layout) -->
 <div class="row g-4 mb-4">
     <div class="col-sm-6 col-lg-3">
