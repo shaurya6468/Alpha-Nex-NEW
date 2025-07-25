@@ -456,7 +456,8 @@ def profile():
     withdrawals = WithdrawalRequest.query.filter_by(user_id=demo_user.id)\
                                         .order_by(WithdrawalRequest.created_at.desc()).all()
     
-    return render_template('profile.html', strikes=strikes, withdrawals=withdrawals)
+    return render_template('profile.html', strikes=strikes, withdrawals=withdrawals, 
+                         current_user=demo_user, demo_user=demo_user)
 
 @app.route('/delete_upload/<int:upload_id>')
 def delete_upload(upload_id):
@@ -510,11 +511,11 @@ def request_withdrawal():
         
         if amount_xp > demo_user.xp_points:
             flash('Insufficient XP points.', 'error')
-            return render_template('profile.html', form=form)
+            return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
         
         if amount_xp and amount_xp < 100:
             flash('Minimum withdrawal is 100 XP.', 'error')
-            return render_template('profile.html', form=form)
+            return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
         
         # Calculate USD amount (example: 100 XP = $1)
         amount_usd = (amount_xp or 0) / 100.0
@@ -532,7 +533,7 @@ def request_withdrawal():
         flash(f'Withdrawal request submitted for {amount_xp} XP (${amount_usd:.2f}).', 'success')
         return redirect(url_for('profile'))
     
-    return render_template('profile.html', withdrawal_form=form)
+    return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
 
 @app.route('/admin')
 def admin_panel():
