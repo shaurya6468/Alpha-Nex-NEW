@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import render_template, request, redirect, url_for, flash, jsonify, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app import app, db
 from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction, Rating
@@ -140,10 +140,38 @@ def create_test_files(test_user):
     
     db.session.commit()
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    """Landing page redirects directly to dashboard"""
-    return redirect(url_for('dashboard'))
+    """Landing page redirects to name entry"""
+    return redirect(url_for('name_entry'))
+
+@app.route('/name-entry', methods=['GET', 'POST'])
+def name_entry():
+    """Name entry page before dashboard access"""
+    if request.method == 'POST':
+        user_name = request.form.get('user_name', '').strip()
+        
+        # Validate name
+        if not user_name or len(user_name) < 2:
+            flash('Please enter a valid name (at least 2 characters).', 'error')
+            return render_template('name_entry.html')
+        
+        if len(user_name) > 50:
+            flash('Name is too long. Please use 50 characters or less.', 'error')
+            return render_template('name_entry.html')
+        
+        # Check if name contains only letters and spaces
+        import re
+        if not re.match(r'^[A-Za-z\s]+$', user_name):
+            flash('Name can only contain letters and spaces.', 'error')
+            return render_template('name_entry.html')
+        
+        # Store name in session and redirect to dashboard
+        session['user_name'] = user_name
+        flash(f'Welcome to Alpha Nex, {user_name}!', 'success')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('name_entry.html')
 
 # Authentication routes removed - direct access to dashboard
 
@@ -151,16 +179,26 @@ def index():
 
 @app.route('/dashboard')
 def dashboard():
-    # Create or get demo user
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+    
+    # Create or get demo user with the entered name
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
         demo_user = User()
-        demo_user.name = 'Demo User'
+        demo_user.name = user_name  # Use the entered name
         demo_user.email = 'demo@alphanex.com'
         demo_user.password_hash = generate_password_hash('demo123')
         demo_user.xp_points = 500  # Reset to normal starting XP
         db.session.add(demo_user)
         db.session.commit()
+    else:
+        # Update name if it's different
+        if demo_user.name != user_name:
+            demo_user.name = user_name
+            db.session.commit()
     
     # Create or get a second demo user for test files
     test_user = User.query.filter_by(email='testuser@alphanex.com').first()
@@ -205,6 +243,11 @@ def dashboard():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     """File upload endpoint"""
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+        
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
@@ -317,6 +360,11 @@ def upload_file():
 @app.route('/review')
 def review_content():
     """Content review endpoint - shows all uploaded files for review"""
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+        
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
@@ -358,6 +406,11 @@ def review_content():
 @app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
 def review_upload(upload_id):
     """Review a specific upload"""
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+        
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
@@ -461,6 +514,11 @@ def review_upload(upload_id):
 @app.route('/rating', methods=['GET', 'POST'])
 def rate_website():
     """Website rating and feedback page"""
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+        
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
@@ -487,6 +545,12 @@ def rate_website():
 
 @app.route('/profile')
 def profile():
+    """User profile page"""
+    # Check if user entered their name
+    user_name = session.get('user_name')
+    if not user_name:
+        return redirect(url_for('name_entry'))
+        
     # Get demo user
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
