@@ -42,13 +42,7 @@ def get_or_create_static_user():
 def create_test_content():
     """Create sample content for review system"""
     test_files = [
-        {
-            'filename': 'sample_video.mp4',
-            'original_filename': '**DEMO FILE** Educational Video Tutorial',
-            'file_size': 15728640,  # 15MB
-            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Educational programming tutorial covering Python basics',
-            'category': 'Educational'
-        },
+
         {
             'filename': 'sample_audio.mp3',
             'original_filename': '**DEMO FILE** Podcast Episode',
@@ -93,8 +87,21 @@ def create_test_content():
 
 @app.route('/')
 def index():
-    """Landing page redirects directly to dashboard"""
-    return redirect(url_for('dashboard'))
+    """Landing page redirects to name entry"""
+    return redirect(url_for('name_entry'))
+
+@app.route('/name_entry', methods=['GET', 'POST'])
+def name_entry():
+    """Name entry page before dashboard"""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if name and len(name) >= 2 and len(name) <= 50 and name.replace(' ', '').isalpha():
+            session['user_name'] = name
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Please enter a valid name (2-50 characters, letters and spaces only)', 'error')
+    
+    return render_template('name_entry.html')
 
 @app.route('/health')
 def health():
@@ -112,8 +119,13 @@ def health():
 @app.route('/dashboard')
 def dashboard():
     """Dashboard page"""
+    # Check if user has entered name
+    if 'user_name' not in session:
+        return redirect(url_for('name_entry'))
+    
     try:
         user = get_or_create_static_user()
+        user_name = session['user_name']
         
         # Get user stats
         upload_count = Upload.query.filter_by(user_id=user.id).count()
@@ -134,8 +146,9 @@ def dashboard():
                              daily_remaining_mb=daily_remaining_mb,
                              demo_user=user,
                              current_user=user,
+                             user_name=user_name,
                              xp_threshold_reached=False,
-                             welcome_message="Welcome to Alpha Nex!",
+                             welcome_message=f"Welcome {user_name}! 🚀",
                              milestone_message="",
                              daily_limit_message="")
                              
@@ -161,10 +174,11 @@ def upload_file():
                 # Process file upload
                 filename = secure_filename(file.filename)
                 unique_filename = f"{uuid.uuid4()}_{filename}"
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+                upload_folder = 'uploads'
+                file_path = os.path.join(upload_folder, unique_filename)
                 
                 # Ensure upload directory exists
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                os.makedirs(upload_folder, exist_ok=True)
                 
                 # Save file
                 file.save(file_path)
@@ -196,7 +210,17 @@ def upload_file():
                 db.session.add(upload)
                 db.session.commit()
                 
-                flash('File uploaded successfully! You earned 20 XP points.', 'success')
+                motivational_messages = [
+                    "🎉 Awesome upload! You're contributing amazing content!",
+                    "⭐ Fantastic! Your upload earned you 20 XP points!",
+                    "🚀 Great job! Keep sharing quality content!",
+                    "💪 Excellent upload! You're making the platform better!",
+                    "🌟 Outstanding work! 20 XP points added to your account!",
+                    "🔥 Amazing content! You're a content creation superstar!",
+                    "✨ Perfect upload! Your contribution is valuable!"
+                ]
+                import random
+                flash(random.choice(motivational_messages), 'success')
                 return redirect(url_for('dashboard'))
         
         # Calculate remaining daily upload capacity
@@ -263,7 +287,7 @@ def review_upload(upload_id):
             review.upload_id = upload_id
             review.reviewer_id = user.id
             review.rating = form.rating.data
-            review.comments = form.description.data
+            review.description = form.description.data
             review.xp_earned = 15  # Review XP
             
             # Update user stats
@@ -273,7 +297,17 @@ def review_upload(upload_id):
             db.session.add(review)
             db.session.commit()
             
-            flash('Review submitted successfully! You earned 15 XP points.', 'success')
+            motivational_messages = [
+                "🎉 Amazing review! You're helping make the platform better!",
+                "⭐ Great job! Your insights are valuable to our community!",
+                "🚀 Fantastic review! You're on fire today!",
+                "💪 Excellent work! Keep up the great reviewing!",
+                "🌟 Outstanding review! You earned 15 XP points!",
+                "🔥 Brilliant analysis! You're a reviewing superstar!",
+                "✨ Perfect review! Your feedback makes a difference!"
+            ]
+            import random
+            flash(random.choice(motivational_messages), 'success')
             return redirect(url_for('review_content'))
         
         # Get existing reviews for this upload
