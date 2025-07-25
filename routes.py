@@ -18,105 +18,105 @@ def create_test_files(test_user):
         {
             'filename': 'sample_video_tutorial.mp4',
             'original_filename': 'Python Programming Tutorial - Basics.mp4',
-            'description': 'A comprehensive tutorial covering Python programming fundamentals including variables, loops, and functions.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - A comprehensive tutorial covering Python programming fundamentals including variables, loops, and functions.',
             'category': 'video',
             'file_size': 15728640  # 15MB
         },
         {
             'filename': 'machine_learning_paper.pdf',
             'original_filename': 'Deep Learning in Computer Vision - Research Paper.pdf',
-            'description': 'Academic research paper discussing the latest advances in deep learning techniques for computer vision applications.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Academic research paper discussing the latest advances in deep learning techniques for computer vision applications.',
             'category': 'document',
             'file_size': 2097152  # 2MB
         },
         {
             'filename': 'javascript_project.zip',
             'original_filename': 'React E-commerce Project.zip',
-            'description': 'Complete React.js e-commerce website project with shopping cart, user authentication, and payment integration.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Complete React.js e-commerce website project with shopping cart, user authentication, and payment integration.',
             'category': 'code',
             'file_size': 5242880  # 5MB
         },
         {
             'filename': 'nature_sounds.mp3',
             'original_filename': 'Relaxing Forest Sounds - 1 Hour.mp3',
-            'description': 'High-quality audio recording of peaceful forest sounds including birds chirping and gentle wind through trees.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - High-quality audio recording of peaceful forest sounds including birds chirping and gentle wind through trees.',
             'category': 'audio',
             'file_size': 8388608  # 8MB
         },
         {
             'filename': 'website_design.png',
             'original_filename': 'Modern UI Design Mockup.png',
-            'description': 'Professional website design mockup showcasing modern UI/UX principles with clean layouts and responsive design.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Professional website design mockup showcasing modern UI/UX principles with clean layouts and responsive design.',
             'category': 'image',
             'file_size': 1048576  # 1MB
         },
         {
             'filename': 'react_masterclass.mp4',
             'original_filename': 'React.js Advanced Concepts.mp4',
-            'description': 'In-depth React.js tutorial covering hooks, context API, performance optimization, and advanced state management patterns.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - In-depth React.js tutorial covering hooks, context API, performance optimization, and advanced state management patterns.',
             'category': 'video',
             'file_size': 42000000  # 42MB
         },
         {
             'filename': 'cybersecurity_podcast.wav',
             'original_filename': 'Cybersecurity Weekly Episode 15.wav',
-            'description': 'Latest cybersecurity trends discussion including zero-trust architecture, endpoint security, and threat intelligence.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Latest cybersecurity trends discussion including zero-trust architecture, endpoint security, and threat intelligence.',
             'category': 'audio',
             'file_size': 28800000  # 28.8MB
         },
         {
             'filename': 'api_documentation.pdf',
             'original_filename': 'RESTful API Design Guide.pdf',
-            'description': 'Comprehensive guide to designing scalable REST APIs with best practices, authentication methods, and documentation standards.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Comprehensive guide to designing scalable REST APIs with best practices, authentication methods, and documentation standards.',
             'category': 'document',
             'file_size': 3072000  # 3MB
         },
         {
             'filename': 'algorithm_implementation.py',
             'original_filename': 'data_structures_algorithms.py',
-            'description': 'Python implementation of essential data structures and algorithms including binary trees, graphs, and dynamic programming.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Python implementation of essential data structures and algorithms including binary trees, graphs, and dynamic programming.',
             'category': 'code',
             'file_size': 256000  # 256KB
         },
         {
             'filename': 'database_schema.png',
             'original_filename': 'E-commerce Database Design.png',
-            'description': 'Detailed database schema diagram for a scalable e-commerce platform with proper normalization and indexing strategies.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Detailed database schema diagram for a scalable e-commerce platform with proper normalization and indexing strategies.',
             'category': 'image',
             'file_size': 1536000  # 1.5MB
         },
         {
             'filename': 'devops_tutorial.avi',
             'original_filename': 'Docker & Kubernetes Tutorial.avi',
-            'description': 'Complete DevOps tutorial covering containerization with Docker, orchestration with Kubernetes, and CI/CD pipeline setup.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Complete DevOps tutorial covering containerization with Docker, orchestration with Kubernetes, and CI/CD pipeline setup.',
             'category': 'video',
             'file_size': 38400000  # 38.4MB
         },
         {
             'filename': 'tech_interview.m4a',
             'original_filename': 'Software Engineering Interview Prep.m4a',
-            'description': 'Mock technical interview session covering system design, coding challenges, and behavioral questions for senior developers.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Mock technical interview session covering system design, coding challenges, and behavioral questions for senior developers.',
             'category': 'audio',
             'file_size': 22528000  # 22.5MB
         },
         {
             'filename': 'ml_research_notes.txt',
             'original_filename': 'Machine Learning Research Notes.txt',
-            'description': 'Detailed notes on latest machine learning research including transformer architectures, attention mechanisms, and neural networks.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Detailed notes on latest machine learning research including transformer architectures, attention mechanisms, and neural networks.',
             'category': 'document',
             'file_size': 512000  # 512KB
         },
         {
             'filename': 'web_performance.js',
             'original_filename': 'performance_optimization_utils.js',
-            'description': 'JavaScript utilities for web performance optimization including lazy loading, code splitting, and cache management.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - JavaScript utilities for web performance optimization including lazy loading, code splitting, and cache management.',
             'category': 'code',
             'file_size': 307200  # 300KB
         },
         {
             'filename': 'system_architecture.svg',
             'original_filename': 'Microservices Architecture Diagram.svg',
-            'description': 'Scalable microservices architecture diagram showing service communication, load balancing, and database distribution.',
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Scalable microservices architecture diagram showing service communication, load balancing, and database distribution.',
             'category': 'image',
             'file_size': 204800  # 200KB
         }
