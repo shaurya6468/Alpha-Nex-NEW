@@ -147,31 +147,16 @@ def index():
     return redirect(url_for('name_entry'))
 
 def reset_all_demo_data():
-    """Clear all existing demo data and create fresh state"""
+    """Clear all existing data for completely fresh experience"""
     try:
-        # Delete all existing demo user data
-        demo_user = User.query.filter_by(email='demo@alphanex.com').first()
-        if demo_user:
-            # Delete all uploads by demo user
-            Upload.query.filter_by(user_id=demo_user.id).delete()
-            # Delete all reviews by demo user
-            Review.query.filter_by(reviewer_id=demo_user.id).delete()
-            # Delete all strikes for demo user
-            Strike.query.filter_by(user_id=demo_user.id).delete()
-            # Delete demo user
-            db.session.delete(demo_user)
-        
-        # Delete all existing test user data
-        test_user = User.query.filter_by(email='testuser@alphanex.com').first()
-        if test_user:
-            # Delete all uploads by test user
-            Upload.query.filter_by(user_id=test_user.id).delete()
-            # Delete all reviews for test user uploads
-            Review.query.filter(Review.upload_id.in_(
-                db.session.query(Upload.id).filter_by(user_id=test_user.id)
-            )).delete(synchronize_session=False)
-            # Delete test user
-            db.session.delete(test_user)
+        # Delete all data for fresh start (order matters for foreign keys)
+        Review.query.delete()
+        Upload.query.delete() 
+        Strike.query.delete()
+        WithdrawalRequest.query.delete()
+        AdminAction.query.delete()
+        Rating.query.delete()
+        User.query.delete()
         
         db.session.commit()
     except Exception as e:
@@ -220,10 +205,11 @@ def dashboard():
     if not user_name:
         return redirect(url_for('name_entry'))
     
-    # Always create completely fresh demo user
+    # Generate random email for completely fresh demo user
+    random_id = str(uuid.uuid4())[:8]
     demo_user = User()
     demo_user.name = user_name
-    demo_user.email = 'demo@alphanex.com'
+    demo_user.email = f'demo_{random_id}@alphanex.com'
     demo_user.password_hash = generate_password_hash('demo123')
     demo_user.xp_points = 500  # Fresh starting XP
     demo_user.daily_upload_count = 0  # Fresh daily limits - reset to 0
@@ -234,10 +220,11 @@ def dashboard():
     db.session.add(demo_user)
     db.session.commit()
     
-    # Always create fresh test user for demo files
+    # Generate random email for fresh test user
+    test_random_id = str(uuid.uuid4())[:8]
     test_user = User()
     test_user.name = 'Test User'
-    test_user.email = 'testuser@alphanex.com'
+    test_user.email = f'testuser_{test_random_id}@alphanex.com'
     test_user.password_hash = generate_password_hash('test123')
     test_user.xp_points = 300
     db.session.add(test_user)
