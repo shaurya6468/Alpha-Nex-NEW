@@ -146,6 +146,38 @@ def index():
     """Landing page redirects to name entry"""
     return redirect(url_for('name_entry'))
 
+def reset_all_demo_data():
+    """Clear all existing demo data and create fresh state"""
+    try:
+        # Delete all existing demo user data
+        demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+        if demo_user:
+            # Delete all uploads by demo user
+            Upload.query.filter_by(user_id=demo_user.id).delete()
+            # Delete all reviews by demo user
+            Review.query.filter_by(reviewer_id=demo_user.id).delete()
+            # Delete all strikes for demo user
+            Strike.query.filter_by(user_id=demo_user.id).delete()
+            # Delete demo user
+            db.session.delete(demo_user)
+        
+        # Delete all existing test user data
+        test_user = User.query.filter_by(email='testuser@alphanex.com').first()
+        if test_user:
+            # Delete all uploads by test user
+            Upload.query.filter_by(user_id=test_user.id).delete()
+            # Delete all reviews for test user uploads
+            Review.query.filter(Review.upload_id.in_(
+                db.session.query(Upload.id).filter_by(user_id=test_user.id)
+            )).delete(synchronize_session=False)
+            # Delete test user
+            db.session.delete(test_user)
+        
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error resetting demo data: {e}")
+
 @app.route('/name-entry', methods=['GET', 'POST'])
 def name_entry():
     """Name entry page before dashboard access"""
@@ -167,6 +199,9 @@ def name_entry():
             flash('Name can only contain letters and spaces.', 'error')
             return render_template('name_entry.html')
         
+        # Reset all demo data for fresh experience
+        reset_all_demo_data()
+        
         # Store name in session and redirect to dashboard
         session['user_name'] = user_name
         flash(f'Welcome to Alpha Nex, {user_name}!', 'success')
@@ -185,23 +220,33 @@ def dashboard():
     if not user_name:
         return redirect(url_for('name_entry'))
     
-    # Create or get demo user with the entered name
+    # Get or create fresh demo user for each session
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
         demo_user = User()
         demo_user.name = user_name  # Use the entered name
         demo_user.email = 'demo@alphanex.com'
         demo_user.password_hash = generate_password_hash('demo123')
-        demo_user.xp_points = 500  # Reset to normal starting XP
+        demo_user.xp_points = 500  # Fresh starting XP
+        demo_user.daily_upload_count = 0  # Fresh daily limits
+        demo_user.daily_upload_bytes = 0
+        demo_user.daily_review_count = 0
+        demo_user.daily_upload_reset = datetime.utcnow()
+        demo_user.daily_review_reset = datetime.utcnow()
         db.session.add(demo_user)
         db.session.commit()
     else:
-        # Update name if it's different
-        if demo_user.name != user_name:
-            demo_user.name = user_name
-            db.session.commit()
+        # Reset the demo user to fresh state
+        demo_user.name = user_name
+        demo_user.xp_points = 500
+        demo_user.daily_upload_count = 0
+        demo_user.daily_upload_bytes = 0
+        demo_user.daily_review_count = 0
+        demo_user.daily_upload_reset = datetime.utcnow()
+        demo_user.daily_review_reset = datetime.utcnow()
+        db.session.commit()
     
-    # Create or get a second demo user for test files
+    # Get or create fresh test user for demo files
     test_user = User.query.filter_by(email='testuser@alphanex.com').first()
     if not test_user:
         test_user = User()
@@ -212,7 +257,7 @@ def dashboard():
         db.session.add(test_user)
         db.session.commit()
         
-        # Create test files from test user for demo user to review
+        # Create fresh test files from test user for demo user to review
         create_test_files(test_user)
     
     # Set demo user as current user context (no authentication needed)
