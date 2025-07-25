@@ -123,14 +123,16 @@ def create_test_files(test_user):
     ]
     
     for test_file in test_files:
-        # Check if this test file already exists
-        existing = Upload.query.filter_by(filename=test_file['filename']).first()
+        # Create unique filename for this test user to avoid conflicts
+        unique_filename = f"{test_user.id}_{test_file['filename']}"
+        # Check if this test file already exists for this specific test user
+        existing = Upload.query.filter_by(filename=unique_filename, user_id=test_user.id).first()
         if not existing:
             upload = Upload()
             upload.user_id = test_user.id
-            upload.filename = test_file['filename']
+            upload.filename = unique_filename
             upload.original_filename = test_file['original_filename']
-            upload.file_path = f"uploads/test_{test_file['filename']}"
+            upload.file_path = f"uploads/test_{unique_filename}"
             upload.file_size = test_file['file_size']
             upload.description = test_file['description']
             upload.category = test_file['category']
@@ -184,8 +186,7 @@ def name_entry():
             flash('Name can only contain letters and spaces.', 'error')
             return render_template('name_entry.html')
         
-        # Clear all previous data for completely fresh experience
-        reset_all_demo_data()
+        # Don't clear all data - allow multiple users simultaneously
         
         # Store name in session 
         session['user_name'] = user_name
