@@ -415,9 +415,13 @@ def review_upload(upload_id):
                          existing_reviews=existing_reviews, review_count=len(existing_reviews), demo_user=demo_user)
 
 @app.route('/rating', methods=['GET', 'POST'])
-@login_required
 def rate_website():
     """Website rating and feedback page"""
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     form = RatingForm()
     
     if form.validate_on_submit():
@@ -439,6 +443,11 @@ def rate_website():
 
 @app.route('/profile')
 def profile():
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     # Get user's strikes and violation history
     strikes = Strike.query.filter_by(user_id=demo_user.id)\
                          .order_by(Strike.created_at.desc()).all()
@@ -451,6 +460,11 @@ def profile():
 
 @app.route('/delete_upload/<int:upload_id>')
 def delete_upload(upload_id):
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     upload = Upload.query.get_or_404(upload_id)
     
     if upload.user_id != demo_user.id:
@@ -484,6 +498,11 @@ def delete_upload(upload_id):
 
 @app.route('/request_withdrawal', methods=['GET', 'POST'])
 def request_withdrawal():
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     form = WithdrawalForm()
     
     if form.validate_on_submit():
@@ -517,6 +536,11 @@ def request_withdrawal():
 
 @app.route('/admin')
 def admin_panel():
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return redirect(url_for('dashboard'))
+        
     # Simple admin check (in production, use proper role system)
     if demo_user.email not in ['admin@alphanex.com']:
         flash('Access denied.', 'error')
@@ -538,8 +562,12 @@ def admin_panel():
 
 # API endpoint for countdown timer updates
 @app.route('/api/upload_status/<int:upload_id>')
-@login_required
 def upload_status(upload_id):
+    # Get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        return jsonify({'error': 'User not found'}), 404
+        
     upload = Upload.query.get_or_404(upload_id)
     
     if upload.user_id != demo_user.id:
