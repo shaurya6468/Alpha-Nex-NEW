@@ -47,7 +47,7 @@ try:
     db.init_app(app)
     login_manager = LoginManager()
     login_manager.init_app(app)
-    login_manager.login_view = 'name_entry'
+    # login_manager.login_view = 'name_entry'  # Disabled for demo mode
     login_manager.login_message = ""  # Empty string instead of None
     login_manager.session_protection = "strong"
 except Exception as e:
