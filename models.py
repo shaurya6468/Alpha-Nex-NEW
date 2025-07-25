@@ -28,7 +28,7 @@ class User(UserMixin, db.Model):
     uploads = db.relationship('Upload', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='reviewer', lazy=True)
     strikes = db.relationship('Strike', backref='user', lazy=True)
-    withdrawals = db.relationship('WithdrawalRequest', backref='user', lazy=True)
+
     
     def get_daily_upload_remaining(self):
         """Calculate remaining daily upload capacity in bytes"""
@@ -99,7 +99,7 @@ class Upload(db.Model):
         self.deletion_deadline = datetime.utcnow() + timedelta(hours=48)
     
     def get_average_rating(self):
-        reviews_list = [review for review in self.reviews]
+        reviews_list = list(self.reviews)
         if not reviews_list:
             return None
         good_reviews = sum(1 for r in reviews_list if r.rating == 'good')

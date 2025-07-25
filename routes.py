@@ -452,11 +452,7 @@ def profile():
     strikes = Strike.query.filter_by(user_id=demo_user.id)\
                          .order_by(Strike.created_at.desc()).all()
     
-    # Get withdrawal requests
-    withdrawals = WithdrawalRequest.query.filter_by(user_id=demo_user.id)\
-                                        .order_by(WithdrawalRequest.created_at.desc()).all()
-    
-    return render_template('profile.html', strikes=strikes, withdrawals=withdrawals, 
+    return render_template('profile.html', strikes=strikes, 
                          current_user=demo_user, demo_user=demo_user)
 
 @app.route('/delete_upload/<int:upload_id>')
@@ -497,43 +493,7 @@ def delete_upload(upload_id):
     
     return redirect(url_for('dashboard'))
 
-@app.route('/request_withdrawal', methods=['GET', 'POST'])
-def request_withdrawal():
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
-    if not demo_user:
-        return redirect(url_for('dashboard'))
-        
-    form = WithdrawalForm()
-    
-    if form.validate_on_submit():
-        amount_xp = form.amount_xp.data
-        
-        if amount_xp > demo_user.xp_points:
-            flash('Insufficient XP points.', 'error')
-            return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
-        
-        if amount_xp and amount_xp < 100:
-            flash('Minimum withdrawal is 100 XP.', 'error')
-            return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
-        
-        # Calculate USD amount (example: 100 XP = $1)
-        amount_usd = (amount_xp or 0) / 100.0
-        
-        withdrawal = WithdrawalRequest()
-        withdrawal.user_id = demo_user.id
-        withdrawal.amount_xp = amount_xp
-        withdrawal.amount_usd = amount_usd
-        withdrawal.payment_method = form.payment_method.data
-        withdrawal.payment_details = form.payment_details.data
-        
-        db.session.add(withdrawal)
-        db.session.commit()
-        
-        flash(f'Withdrawal request submitted for {amount_xp} XP (${amount_usd:.2f}).', 'success')
-        return redirect(url_for('profile'))
-    
-    return render_template('profile.html', withdrawal_form=form, current_user=demo_user, demo_user=demo_user)
+
 
 @app.route('/admin')
 def admin_panel():
@@ -548,7 +508,6 @@ def admin_panel():
         return redirect(url_for('dashboard'))
     
     # Get pending items
-    pending_withdrawals = WithdrawalRequest.query.filter_by(status='pending').count()
     flagged_content = Upload.query.filter_by(status='flagged').count()
     total_users = User.query.count()
     
@@ -556,7 +515,6 @@ def admin_panel():
     recent_strikes = Strike.query.order_by(Strike.created_at.desc()).limit(10).all()
     
     return render_template('admin/panel.html', 
-                         pending_withdrawals=pending_withdrawals,
                          flagged_content=flagged_content,
                          total_users=total_users,
                          recent_strikes=recent_strikes)
