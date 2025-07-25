@@ -9,6 +9,7 @@ from app import app, db
 from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction, Rating
 from forms import SignupForm, LoginForm, UploadForm, ReviewForm, WithdrawalForm, RatingForm
 from utils import allowed_file, get_file_size, calculate_xp_reward
+from utils_motivation import get_upload_success_message, get_review_success_message, get_xp_milestone_message, get_welcome_back_message, get_daily_limit_reminder
 from openai_service import detect_duplicate_content, check_content_quality
 
 def create_test_files(test_user):
@@ -232,13 +233,25 @@ def dashboard():
     # Check if user has reached XP threshold requiring account creation
     xp_threshold_reached = demo_user.xp_points >= 1500
     
+    # Get motivational messages
+    welcome_message = get_welcome_back_message(user_name)
+    milestone_message = get_xp_milestone_message(user_name, demo_user.xp_points)
+    daily_limit_message = get_daily_limit_reminder(
+        user_name, 
+        demo_user.get_remaining_uploads_today(), 
+        demo_user.get_remaining_reviews_today()
+    )
+    
     return render_template('dashboard.html', 
                          upload_count=upload_count,
                          review_count=review_count,
                          recent_uploads=recent_uploads,
                          daily_remaining_mb=daily_remaining_mb,
                          demo_user=demo_user,
-                         xp_threshold_reached=xp_threshold_reached)
+                         xp_threshold_reached=xp_threshold_reached,
+                         welcome_message=welcome_message,
+                         milestone_message=milestone_message,
+                         daily_limit_message=daily_limit_message)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -335,7 +348,9 @@ def upload_file():
                     upload.spam_score = 0.0
                     db.session.commit()
                 
-                flash(f'✅ Upload Complete! File "{filename}" has been successfully uploaded and saved. Status: Pending Review (will be approved within 24 hours). You earned {upload_xp} XP points!', 'success')
+                # Get motivational success message
+                success_message = get_upload_success_message(user_name, upload_xp, demo_user.daily_upload_count)
+                flash(success_message, 'success')
                 return redirect(url_for('dashboard'))
                 
             except Exception as e:
@@ -486,7 +501,8 @@ def review_upload(upload_id):
                 uploader = User.query.get(upload.user_id)
                 if uploader:
                     uploader.xp_points += calculate_xp_reward('upload_approved')
-                flash(f'Review submitted! Upload approved with {good_reviews} positive reviews. You earned {review.xp_earned} XP!', 'success')
+                success_message = get_review_success_message(user_name, review.xp_earned, demo_user.daily_review_count)
+                flash(f'{success_message} Upload approved with {good_reviews} positive reviews!', 'success')
             elif bad_reviews >= 3:
                 # Upload denied - take XP from uploader
                 upload.status = 'rejected'
@@ -494,14 +510,17 @@ def review_upload(upload_id):
                 if uploader:
                     penalty = calculate_xp_reward('upload')  # Same amount as upload reward
                     uploader.xp_points = max(0, uploader.xp_points - penalty)  # Don't go below 0
-                flash(f'Review submitted! Upload denied with {bad_reviews} negative reviews. You earned {review.xp_earned} XP!', 'success')
+                success_message = get_review_success_message(user_name, review.xp_earned, demo_user.daily_review_count)
+                flash(f'{success_message} Upload denied with {bad_reviews} negative reviews.', 'success')
             else:
                 upload.status = 'pending'  # Still needs more reviews
-                flash(f'Review submitted! Upload still pending ({total_reviews}/5 reviews complete). You earned {review.xp_earned} XP!', 'success')
+                success_message = get_review_success_message(user_name, review.xp_earned, demo_user.daily_review_count)
+                flash(f'{success_message} Upload still pending ({total_reviews}/5 reviews complete).', 'success')
             
             db.session.commit()
         else:
-            flash(f'Review submitted! You earned {review.xp_earned} XP. Upload has {total_reviews}/5 reviews.', 'success')
+            success_message = get_review_success_message(user_name, review.xp_earned, demo_user.daily_review_count)
+            flash(f'{success_message} Upload has {total_reviews}/5 reviews.', 'success')
         
         return redirect(url_for('review_content'))
     
