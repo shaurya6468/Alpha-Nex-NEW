@@ -187,8 +187,42 @@ def name_entry():
         # Clear all previous data for completely fresh experience
         reset_all_demo_data()
         
-        # Store name in session and redirect to dashboard
+        # Store name in session 
         session['user_name'] = user_name
+        
+        # Create the demo and test users here and store IDs in session
+        # Generate random email for completely fresh demo user
+        random_id = str(uuid.uuid4())[:8]
+        demo_user = User()
+        demo_user.name = user_name
+        demo_user.email = f'demo_{random_id}@alphanex.com'
+        demo_user.password_hash = generate_password_hash('demo123')
+        demo_user.xp_points = 500  # Fresh starting XP
+        demo_user.daily_upload_count = 0  # Fresh daily limits - reset to 0
+        demo_user.daily_upload_bytes = 0  # Fresh upload bytes - reset to 0  
+        demo_user.daily_review_count = 0  # Fresh review count - reset to 0
+        demo_user.daily_upload_reset = datetime.utcnow()
+        demo_user.daily_review_reset = datetime.utcnow()
+        db.session.add(demo_user)
+        db.session.commit()
+        
+        # Generate random email for fresh test user
+        test_random_id = str(uuid.uuid4())[:8]
+        test_user = User()
+        test_user.name = 'Test User'
+        test_user.email = f'testuser_{test_random_id}@alphanex.com'
+        test_user.password_hash = generate_password_hash('test123')
+        test_user.xp_points = 300
+        db.session.add(test_user)
+        db.session.commit()
+        
+        # Store user IDs in session for navigation
+        session['demo_user_id'] = demo_user.id
+        session['test_user_id'] = test_user.id
+        
+        # Create fresh test files from test user for demo user to review
+        create_test_files(test_user)
+        
         flash(f'Welcome to Alpha Nex, {user_name}!', 'success')
         return redirect(url_for('dashboard'))
     
@@ -202,36 +236,15 @@ def name_entry():
 def dashboard():
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
     
-    # Generate random email for completely fresh demo user
-    random_id = str(uuid.uuid4())[:8]
-    demo_user = User()
-    demo_user.name = user_name
-    demo_user.email = f'demo_{random_id}@alphanex.com'
-    demo_user.password_hash = generate_password_hash('demo123')
-    demo_user.xp_points = 500  # Fresh starting XP
-    demo_user.daily_upload_count = 0  # Fresh daily limits - reset to 0
-    demo_user.daily_upload_bytes = 0  # Fresh upload bytes - reset to 0  
-    demo_user.daily_review_count = 0  # Fresh review count - reset to 0
-    demo_user.daily_upload_reset = datetime.utcnow()
-    demo_user.daily_review_reset = datetime.utcnow()
-    db.session.add(demo_user)
-    db.session.commit()
-    
-    # Generate random email for fresh test user
-    test_random_id = str(uuid.uuid4())[:8]
-    test_user = User()
-    test_user.name = 'Test User'
-    test_user.email = f'testuser_{test_random_id}@alphanex.com'
-    test_user.password_hash = generate_password_hash('test123')
-    test_user.xp_points = 300
-    db.session.add(test_user)
-    db.session.commit()
-    
-    # Create fresh test files from test user for demo user to review
-    create_test_files(test_user)
+    # Get the demo user from session
+    demo_user = User.query.get(demo_user_id)
+    if not demo_user:
+        return redirect(url_for('name_entry'))
     
     # Set demo user as current user context (no authentication needed)
     # login_user(demo_user)  # Removed since we don't need sessions
@@ -276,13 +289,15 @@ def upload_file():
     """File upload endpoint"""
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
         
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
     
     # Check XP threshold
     if demo_user.xp_points >= 1500:
@@ -395,13 +410,15 @@ def review_content():
     """Content review endpoint - shows all uploaded files for review"""
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
         
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
     
     # Check XP threshold  
     if demo_user.xp_points >= 1500:
@@ -441,13 +458,15 @@ def review_upload(upload_id):
     """Review a specific upload"""
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
         
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
     
     # Check XP threshold  
     if demo_user.xp_points >= 1500:
@@ -553,13 +572,15 @@ def rate_website():
     """Website rating and feedback page"""
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
         
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
         
     form = RatingForm()
     
@@ -585,13 +606,15 @@ def profile():
     """User profile page"""
     # Check if user entered their name
     user_name = session.get('user_name')
-    if not user_name:
+    demo_user_id = session.get('demo_user_id')
+    
+    if not user_name or not demo_user_id:
         return redirect(url_for('name_entry'))
         
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
         
     # Get user's strikes and violation history
     strikes = Strike.query.filter_by(user_id=demo_user.id)\
@@ -602,10 +625,14 @@ def profile():
 
 @app.route('/delete_upload/<int:upload_id>')
 def delete_upload(upload_id):
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user_id = session.get('demo_user_id')
+    if not demo_user_id:
+        return redirect(url_for('name_entry'))
+        
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
         
     upload = Upload.query.get_or_404(upload_id)
     
@@ -642,10 +669,14 @@ def delete_upload(upload_id):
 
 @app.route('/admin')
 def admin_panel():
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user_id = session.get('demo_user_id')
+    if not demo_user_id:
+        return redirect(url_for('name_entry'))
+        
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('name_entry'))
         
     # Simple admin check (in production, use proper role system)
     if demo_user.email not in ['admin@alphanex.com']:
@@ -667,8 +698,12 @@ def admin_panel():
 # API endpoint for countdown timer updates
 @app.route('/api/upload_status/<int:upload_id>')
 def upload_status(upload_id):
-    # Get demo user
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    # Get demo user from session
+    demo_user_id = session.get('demo_user_id')
+    if not demo_user_id:
+        return jsonify({'error': 'User not found'}), 404
+        
+    demo_user = User.query.get(demo_user_id)
     if not demo_user:
         return jsonify({'error': 'User not found'}), 404
         
