@@ -196,6 +196,7 @@ def name_entry():
             # Generate random email for completely fresh demo user
             random_id = str(uuid.uuid4())[:8]
             demo_user = User()
+            demo_user.username = f'demo_user_{random_id}'
             demo_user.name = user_name
             demo_user.email = f'demo_{random_id}@alphanex.com'
             demo_user.password_hash = generate_password_hash('demo123')
@@ -206,16 +207,20 @@ def name_entry():
             demo_user.daily_upload_reset = datetime.utcnow()
             demo_user.daily_review_reset = datetime.utcnow()
             db.session.add(demo_user)
-            db.session.commit()
+            db.session.flush()  # Get the ID without committing
             
             # Generate random email for fresh test user
             test_random_id = str(uuid.uuid4())[:8]
             test_user = User()
+            test_user.username = f'test_user_{test_random_id}'
             test_user.name = 'Test User'
             test_user.email = f'testuser_{test_random_id}@alphanex.com'
             test_user.password_hash = generate_password_hash('test123')
             test_user.xp_points = 300
             db.session.add(test_user)
+            db.session.flush()  # Get the ID without committing
+            
+            # Commit both users first
             db.session.commit()
             
             # Store user IDs in session for navigation
