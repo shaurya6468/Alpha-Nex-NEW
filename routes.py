@@ -96,6 +96,19 @@ def index():
     """Landing page redirects directly to dashboard"""
     return redirect(url_for('dashboard'))
 
+@app.route('/health')
+def health():
+    """Health check endpoint for uptime monitoring"""
+    try:
+        # Test database connection
+        from app import db
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        return "OK", 200
+    except Exception as e:
+        app.logger.error(f"Health check failed: {e}")
+        return "Database Error", 503
+
 @app.route('/dashboard')
 def dashboard():
     """Dashboard page"""
@@ -250,7 +263,7 @@ def review_upload(upload_id):
             review.upload_id = upload_id
             review.reviewer_id = user.id
             review.rating = form.rating.data
-            review.feedback = form.feedback.data
+            review.comments = form.description.data
             review.xp_earned = 15  # Review XP
             
             # Update user stats
