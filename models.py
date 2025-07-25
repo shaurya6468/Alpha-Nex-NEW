@@ -154,11 +154,13 @@ class Upload(db.Model):
     
     def get_average_rating(self):
         try:
-            reviews_list = list(self.reviews)
-            if not reviews_list:
+            # Query reviews directly to avoid relationship property issues
+            from app import db
+            reviews_query = db.session.query(Review).filter_by(upload_id=self.id).all()
+            if not reviews_query:
                 return None
-            good_reviews = sum(1 for r in reviews_list if r.rating == 'good')
-            return good_reviews / len(reviews_list)
+            good_reviews = sum(1 for r in reviews_query if r.rating == 'good')
+            return good_reviews / len(reviews_query)
         except Exception as e:
             return None
     
