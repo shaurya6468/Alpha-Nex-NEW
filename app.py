@@ -26,8 +26,8 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "alphanex-demo-secret-key-for-session-management-2025")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configure the database - use SQLite for hosting compatibility
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///alphanex.db"
+# Configure the database - use PostgreSQL for production and multi-user support
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///alphanex.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
