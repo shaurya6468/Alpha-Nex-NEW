@@ -428,7 +428,11 @@ def review_content():
     
     # Get uploads that need review (not from demo user and not already reviewed by them)
     # Show all uploads except those uploaded by demo user
-    reviewed_upload_ids = [r.upload_id for r in demo_user.reviews]
+    try:
+        reviewed_upload_ids = [r.upload_id for r in Review.query.filter_by(reviewer_id=demo_user.id).all()]
+    except Exception as e:
+        app.logger.error(f"Error getting reviewed uploads: {e}")
+        reviewed_upload_ids = []
     
     uploads = Upload.query.join(User).filter(
         Upload.user_id != demo_user.id,  # Cannot review own uploads
@@ -570,11 +574,6 @@ def rate_website():
     except Exception as e:
         app.logger.error(f"Rating route error: {e}")
         return render_template('error.html', error=f"Rating error: {str(e)}")
-        
-    # Get demo user from session
-    demo_user = User.query.get(demo_user_id)
-    if not demo_user:
-        return redirect(url_for('name_entry'))
         
     form = RatingForm()
     
