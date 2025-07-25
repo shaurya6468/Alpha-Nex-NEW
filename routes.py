@@ -236,7 +236,9 @@ def name_entry():
         return render_template('name_entry.html')
     except Exception as e:
         app.logger.error(f"Name entry error: {e}")
-        flash('An error occurred. Please try again.', 'error')
+        import traceback
+        app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        flash(f'An error occurred: {str(e)}. Please try again.', 'error')
         return render_template('name_entry.html')
 
 # Authentication routes removed - direct access to dashboard

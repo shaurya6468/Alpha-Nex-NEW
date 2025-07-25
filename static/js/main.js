@@ -76,7 +76,7 @@
         
         // Handle form validation
         handleFormValidation: function() {
-            const forms = document.querySelectorAll('form');
+            const forms = document.querySelectorAll('form:not(#nameForm)'); // Skip name form - it has its own validation
             
             forms.forEach(form => {
                 form.addEventListener('submit', (e) => {
