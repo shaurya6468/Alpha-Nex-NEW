@@ -139,6 +139,41 @@ def dashboard():
         daily_remaining = user.get_daily_upload_remaining()
         daily_remaining_mb = daily_remaining / (1024 * 1024)
         
+        # Generate motivational messages based on user progress
+        import random
+        
+        # Welcome messages with motivation
+        welcome_messages = [
+            f"🌟 Welcome back {user_name}! Ready to earn more XP?",
+            f"🚀 Hey {user_name}! Time to create amazing content!",
+            f"⭐ Great to see you {user_name}! Let's make today productive!",
+            f"💪 {user_name}, you're doing fantastic! Keep it up!",
+            f"🔥 Welcome {user_name}! Your contributions make a difference!",
+            f"✨ Hello {user_name}! Ready to level up today?",
+            f"🎯 {user_name}, you're on the right path to success!"
+        ]
+        
+        # Milestone celebration messages
+        milestone_messages = []
+        if user.xp_points >= 100:
+            milestone_messages.append("🎉 Amazing! You've reached 100+ XP points!")
+        if user.xp_points >= 500:
+            milestone_messages.append("🏆 Incredible! 500+ XP points achieved!")
+        if upload_count >= 5:
+            milestone_messages.append("📁 Fantastic! You've uploaded 5+ files!")
+        if review_count >= 10:
+            milestone_messages.append("👀 Outstanding! 10+ reviews completed!")
+        
+        # Daily progress motivation
+        remaining_uploads = user.get_remaining_uploads_today()
+        remaining_reviews = user.get_remaining_reviews_today()
+        
+        daily_motivation = []
+        if remaining_uploads > 0:
+            daily_motivation.append(f"💡 You can still upload {remaining_uploads} more files today!")
+        if remaining_reviews > 0:
+            daily_motivation.append(f"🔍 {remaining_reviews} reviews remaining - help the community!")
+        
         return render_template('dashboard.html', 
                              upload_count=upload_count,
                              review_count=review_count,
@@ -148,9 +183,9 @@ def dashboard():
                              current_user=user,
                              user_name=user_name,
                              xp_threshold_reached=False,
-                             welcome_message=f"Welcome {user_name}! 🚀",
-                             milestone_message="",
-                             daily_limit_message="")
+                             welcome_message=random.choice(welcome_messages),
+                             milestone_message=" ".join(milestone_messages),
+                             daily_limit_message=" ".join(daily_motivation))
                              
     except Exception as e:
         app.logger.error(f"Dashboard error: {e}")
