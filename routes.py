@@ -158,7 +158,7 @@ def dashboard():
         demo_user.name = 'Demo User'
         demo_user.email = 'demo@alphanex.com'
         demo_user.password_hash = generate_password_hash('demo123')
-        demo_user.xp_points = 1600  # Set XP above threshold to test the feature
+        demo_user.xp_points = 500  # Reset to normal starting XP
         db.session.add(demo_user)
         db.session.commit()
     
@@ -219,6 +219,12 @@ def upload_file():
         flash('Your account is banned and cannot upload content.', 'error')
         return redirect(url_for('dashboard'))
     
+    # Check daily upload limit (3 uploads per day)
+    if not demo_user.can_upload_today():
+        remaining_uploads = demo_user.get_remaining_uploads_today()
+        flash(f'Daily upload limit reached! You can upload {remaining_uploads} more files today. Limit resets at midnight.', 'warning')
+        return redirect(url_for('dashboard'))
+    
     form = UploadForm()
     
     if form.validate_on_submit():
@@ -228,9 +234,14 @@ def upload_file():
             # Check file size and daily limit
             file_size = get_file_size(file)
             
+            # Check 100MB limit per file
+            if file_size > 100 * 1024 * 1024:
+                flash('File too large! Maximum file size is 100MB per upload.', 'error')
+                return render_template('uploader/upload.html', form=form, demo_user=demo_user)
+            
             if not demo_user.can_upload(file_size):
-                flash('Upload would exceed daily 500MB limit.', 'error')
-                return render_template('uploader/upload.html', form=form)
+                flash('Upload would exceed daily limits (3 uploads/day or 500MB total).', 'error')
+                return render_template('uploader/upload.html', form=form, demo_user=demo_user)
             
             # Generate secure filename
             filename = secure_filename(file.filename)
@@ -254,6 +265,7 @@ def upload_file():
                 
                 # Update user's daily upload count and award XP
                 demo_user.daily_upload_bytes += file_size
+                demo_user.daily_upload_count += 1  # Increment upload count
                 upload_xp = calculate_xp_reward('upload')
                 demo_user.xp_points += upload_xp
                 
@@ -310,8 +322,19 @@ def review_content():
     if not demo_user:
         return redirect(url_for('dashboard'))
     
+    # Check XP threshold  
+    if demo_user.xp_points >= 1500:
+        flash('You have reached 1500 XP! Please create an account to continue using Alpha Nex.', 'warning')
+        return redirect(url_for('dashboard'))
+        
     if demo_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check daily review limit (5 reviews per day)
+    if not demo_user.can_review_today():
+        remaining_reviews = demo_user.get_remaining_reviews_today()
+        flash(f'Daily review limit reached! You can review {remaining_reviews} more items today. Limit resets at midnight.', 'warning')
         return redirect(url_for('dashboard'))
     
     # Get uploads that need review (not from demo user and not already reviewed by them)
@@ -339,9 +362,20 @@ def review_upload(upload_id):
     demo_user = User.query.filter_by(email='demo@alphanex.com').first()
     if not demo_user:
         return redirect(url_for('dashboard'))
+    
+    # Check XP threshold  
+    if demo_user.xp_points >= 1500:
+        flash('You have reached 1500 XP! Please create an account to continue using Alpha Nex.', 'warning')
+        return redirect(url_for('dashboard'))
         
     if demo_user.is_banned:
         flash('Your account is banned and cannot review content.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Check daily review limit (5 reviews per day)
+    if not demo_user.can_review_today():
+        remaining_reviews = demo_user.get_remaining_reviews_today()
+        flash(f'Daily review limit reached! You can review {remaining_reviews} more items today. Limit resets at midnight.', 'warning')
         return redirect(url_for('dashboard'))
     
     upload = Upload.query.get_or_404(upload_id)
@@ -379,8 +413,9 @@ def review_upload(upload_id):
         review.description = form.description.data
         review.xp_earned = calculate_xp_reward('review')
         
-        # Award XP to reviewer
+        # Award XP to reviewer and increment daily counter
         demo_user.xp_points += review.xp_earned
+        demo_user.daily_review_count += 1  # Increment review count
         
         db.session.add(review)
         db.session.commit()

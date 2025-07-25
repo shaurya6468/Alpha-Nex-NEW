@@ -36,7 +36,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 # Configure upload settings
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # Initialize extensions

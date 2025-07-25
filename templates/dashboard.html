@@ -22,6 +22,13 @@
                     <i class="fas fa-star text-warning me-1"></i>{{ demo_user.xp_points if demo_user else 500 }} XP
                 </h3>
                 <small class="text-muted">Total Earned Points</small>
+                {% if demo_user.xp_points >= 1200 %}
+                <div class="mt-1">
+                    <small class="text-warning fw-bold">
+                        <i class="fas fa-exclamation-triangle me-1"></i>{{ 1500 - demo_user.xp_points }} XP until account required
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

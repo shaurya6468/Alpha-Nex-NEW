@@ -22,7 +22,12 @@ class User(UserMixin, db.Model):
     
     # Daily upload tracking
     daily_upload_bytes = db.Column(db.Integer, default=0)
+    daily_upload_count = db.Column(db.Integer, default=0)
     daily_upload_reset = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Daily review tracking
+    daily_review_count = db.Column(db.Integer, default=0)
+    daily_review_reset = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     uploads = db.relationship('Upload', backref='user', lazy=True)
@@ -30,29 +35,78 @@ class User(UserMixin, db.Model):
     strikes = db.relationship('Strike', backref='user', lazy=True)
 
     
+    def reset_daily_counters_if_needed(self):
+        """Reset daily counters if it's a new day"""
+        try:
+            current_date = datetime.utcnow().date()
+            
+            # Reset upload counters if new day
+            if self.daily_upload_reset and current_date > self.daily_upload_reset.date():
+                self.daily_upload_bytes = 0
+                self.daily_upload_count = 0
+                self.daily_upload_reset = datetime.utcnow()
+            elif not self.daily_upload_reset:
+                self.daily_upload_reset = datetime.utcnow()
+            
+            # Reset review counters if new day
+            if self.daily_review_reset and current_date > self.daily_review_reset.date():
+                self.daily_review_count = 0
+                self.daily_review_reset = datetime.utcnow()
+            elif not self.daily_review_reset:
+                self.daily_review_reset = datetime.utcnow()
+                
+            db.session.commit()
+        except Exception as e:
+            pass  # Fail silently
+    
     def get_daily_upload_remaining(self):
         """Calculate remaining daily upload capacity in bytes"""
         try:
-            # Reset daily counter if it's a new day
-            if self.daily_upload_reset and datetime.utcnow().date() > self.daily_upload_reset.date():
-                self.daily_upload_bytes = 0
-                self.daily_upload_reset = datetime.utcnow()
-                db.session.commit()
-            elif not self.daily_upload_reset:
-                # Handle case where daily_upload_reset is None
-                self.daily_upload_reset = datetime.utcnow()
-                db.session.commit()
-            
+            self.reset_daily_counters_if_needed()
             max_daily = 500 * 1024 * 1024  # 500MB in bytes
             current_usage = self.daily_upload_bytes or 0
             return max_daily - current_usage
         except Exception as e:
-            # Return default full limit on any error
             return 500 * 1024 * 1024
+    
+    def can_upload_today(self):
+        """Check if user can upload more files today (max 3 per day)"""
+        try:
+            self.reset_daily_counters_if_needed()
+            return (self.daily_upload_count or 0) < 3
+        except Exception as e:
+            return True
+    
+    def can_review_today(self):
+        """Check if user can review more content today (max 5 per day)"""
+        try:
+            self.reset_daily_counters_if_needed()
+            return (self.daily_review_count or 0) < 5
+        except Exception as e:
+            return True
+    
+    def get_remaining_uploads_today(self):
+        """Get remaining upload count for today"""
+        try:
+            self.reset_daily_counters_if_needed()
+            return 3 - (self.daily_upload_count or 0)
+        except Exception as e:
+            return 3
+    
+    def get_remaining_reviews_today(self):
+        """Get remaining review count for today"""
+        try:
+            self.reset_daily_counters_if_needed()
+            return 5 - (self.daily_review_count or 0)
+        except Exception as e:
+            return 5
     
     def can_upload(self, file_size):
         """Check if user can upload a file of given size"""
-        return self.get_daily_upload_remaining() >= file_size and not self.is_banned
+        return (self.get_daily_upload_remaining() >= file_size and 
+                self.can_upload_today() and 
+                not self.is_banned and 
+                file_size <= 100 * 1024 * 1024)  # 100MB limit per file
     
     def add_strike(self, strike_type, reason):
         strike = Strike()

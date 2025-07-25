@@ -189,3 +189,13 @@ The platform is designed to handle growth from small community to large-scale co
 - Fixed SESSION_SECRET configuration with fallback value for demo environment
 - Fixed SQLAlchemy relationship iteration issues in models
 - Profile page now displays user stats, XP points, strikes, and violation history only
+
+### July 2025 - Daily Limits & XP Threshold Implementation
+- Added XP threshold system: account creation required at 1500 XP points
+- Implemented daily upload limit: maximum 3 uploads per user per day
+- Implemented daily review limit: maximum 5 reviews per user per day  
+- Added file size limit: maximum 100MB per individual upload
+- Daily limits reset automatically at midnight
+- Users see warning messages when approaching XP threshold (1200+ XP)
+- Upload and review functions blocked when daily limits reached
+- Dashboard shows remaining daily uploads/reviews for user awareness
