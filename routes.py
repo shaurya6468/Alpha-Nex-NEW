@@ -145,8 +145,8 @@ def create_test_files(test_user):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Landing page redirects to name entry"""
-    return redirect(url_for('name_entry'))
+    """Landing page redirects directly to dashboard"""
+    return redirect(url_for('dashboard'))
 
 def reset_all_demo_data():
     """Clear all existing data for completely fresh experience"""
@@ -165,81 +165,59 @@ def reset_all_demo_data():
         db.session.rollback()
         print(f"Error resetting demo data: {e}")
 
-@app.route('/name-entry', methods=['GET', 'POST'])
-def name_entry():
-    """Name entry page before dashboard access"""
+def ensure_demo_users():
+    """Ensure demo users exist and return demo user"""
     try:
-        if request.method == 'POST':
-            user_name = request.form.get('user_name', '').strip()
-            
-            # Validate name
-            if not user_name or len(user_name) < 2:
-                flash('Please enter a valid name (at least 2 characters).', 'error')
-                return render_template('name_entry.html')
-            
-            if len(user_name) > 50:
-                flash('Name is too long. Please use 50 characters or less.', 'error')
-                return render_template('name_entry.html')
-            
-            # Check if name contains only letters and spaces
-            import re
-            if not re.match(r'^[A-Za-z\s]+$', user_name):
-                flash('Name can only contain letters and spaces.', 'error')
-                return render_template('name_entry.html')
-            
-            # Don't clear all data - allow multiple users simultaneously
-            
-            # Store name in session 
-            session['user_name'] = user_name
-            
-            # Create the demo and test users here and store IDs in session
-            # Generate random email for completely fresh demo user
-            random_id = str(uuid.uuid4())[:8]
-            demo_user = User()
-            demo_user.username = f'demo_user_{random_id}'
-            demo_user.name = user_name
-            demo_user.email = f'demo_{random_id}@alphanex.com'
-            demo_user.password_hash = generate_password_hash('demo123')
-            demo_user.xp_points = 500  # Fresh starting XP
-            demo_user.daily_upload_count = 0  # Fresh daily limits - reset to 0
-            demo_user.daily_upload_bytes = 0  # Fresh upload bytes - reset to 0  
-            demo_user.daily_review_count = 0  # Fresh review count - reset to 0
-            demo_user.daily_upload_reset = datetime.utcnow()
-            demo_user.daily_review_reset = datetime.utcnow()
-            db.session.add(demo_user)
-            db.session.flush()  # Get the ID without committing
-            
-            # Generate random email for fresh test user
-            test_random_id = str(uuid.uuid4())[:8]
-            test_user = User()
-            test_user.username = f'test_user_{test_random_id}'
-            test_user.name = 'Test User'
-            test_user.email = f'testuser_{test_random_id}@alphanex.com'
-            test_user.password_hash = generate_password_hash('test123')
-            test_user.xp_points = 300
-            db.session.add(test_user)
-            db.session.flush()  # Get the ID without committing
-            
-            # Commit both users first
-            db.session.commit()
-            
-            # Store user IDs in session for navigation
-            session['demo_user_id'] = demo_user.id
-            session['test_user_id'] = test_user.id
-            
-            # Create fresh test files from test user for demo user to review
-            create_test_files(test_user)
-            
-            flash(f'Welcome to Alpha Nex, {user_name}!', 'success')
-            return redirect(url_for('dashboard'))
+        # Check if demo user already exists in session
+        demo_user_id = session.get('demo_user_id')
+        if demo_user_id:
+            demo_user = User.query.get(demo_user_id)
+            if demo_user:
+                return demo_user
         
-        return render_template('name_entry.html')
+        # Create new demo user
+        random_id = str(uuid.uuid4())[:8]
+        demo_user = User()
+        demo_user.username = f'demo_user_{random_id}'
+        demo_user.name = 'Demo User'
+        demo_user.email = f'demo_{random_id}@alphanex.com'
+        demo_user.password_hash = generate_password_hash('demo123')
+        demo_user.xp_points = 500
+        demo_user.daily_upload_count = 0
+        demo_user.daily_upload_bytes = 0
+        demo_user.daily_review_count = 0
+        demo_user.daily_upload_reset = datetime.utcnow()
+        demo_user.daily_review_reset = datetime.utcnow()
+        db.session.add(demo_user)
+        db.session.flush()
+        
+        # Create test user for demo files
+        test_random_id = str(uuid.uuid4())[:8]
+        test_user = User()
+        test_user.username = f'test_user_{test_random_id}'
+        test_user.name = 'Test User'
+        test_user.email = f'testuser_{test_random_id}@alphanex.com'
+        test_user.password_hash = generate_password_hash('test123')
+        test_user.xp_points = 300
+        db.session.add(test_user)
+        db.session.flush()
+        
+        db.session.commit()
+        
+        # Store in session
+        session['demo_user_id'] = demo_user.id
+        session['test_user_id'] = test_user.id
+        session['user_name'] = 'Demo User'
+        
+        # Create test files
+        create_test_files(test_user)
+        
+        return demo_user
+        
     except Exception as e:
-        app.logger.error(f"Name entry error: {e}")
-        import traceback
-        app.logger.error(f"Full traceback: {traceback.format_exc()}")
-        flash(f'An error occurred: {str(e)}. Please try again.', 'error')
-        return render_template('name_entry.html')
+        app.logger.error(f"Demo user creation error: {e}")
+        db.session.rollback()
+        return None
 
 # Authentication routes removed - direct access to dashboard
 
@@ -247,27 +225,15 @@ def name_entry():
 
 @app.route('/dashboard')
 def dashboard():
+    """Dashboard with automatic demo user creation"""
     try:
-        # Check if user entered their name
-        user_name = session.get('user_name')
-        demo_user_id = session.get('demo_user_id')
-        
-        if not user_name or not demo_user_id:
-            return redirect(url_for('name_entry'))
-        
-        # Get the demo user from session
-        demo_user = User.query.get(demo_user_id)
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
         if not demo_user:
-            return redirect(url_for('name_entry'))
-    except Exception as e:
-        app.logger.error(f"Dashboard error: {e}")
-        # Force redirect to name entry on any error
-        return redirect(url_for('name_entry'))
-    
-    # Set demo user as current user context (no authentication needed)
-    # login_user(demo_user)  # Removed since we don't need sessions
-    
-    try:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+        
+        user_name = session.get('user_name', 'Demo User')
+        
         # Get user stats with error handling
         upload_count = Upload.query.filter_by(user_id=demo_user.id).count()
         review_count = Review.query.filter_by(reviewer_id=demo_user.id).count()
@@ -291,47 +257,37 @@ def dashboard():
             demo_user.get_remaining_uploads_today(), 
             demo_user.get_remaining_reviews_today()
         )
+        
+        return render_template('dashboard.html', 
+                             upload_count=upload_count,
+                             review_count=review_count,
+                             recent_uploads=recent_uploads,
+                             daily_remaining_mb=daily_remaining_mb,
+                             demo_user=demo_user,
+                             xp_threshold_reached=xp_threshold_reached,
+                             welcome_message=welcome_message,
+                             milestone_message=milestone_message,
+                             daily_limit_message=daily_limit_message)
+                             
     except Exception as e:
-        app.logger.error(f"Dashboard stats error: {e}")
-        # Provide safe defaults
-        upload_count = 0
-        review_count = 0
-        recent_uploads = []
-        daily_remaining_mb = 500.0
-        xp_threshold_reached = False
-        welcome_message = f"Welcome back, {user_name}!"
-        milestone_message = ""
-        daily_limit_message = ""
-    
-    return render_template('dashboard.html', 
-                         upload_count=upload_count,
-                         review_count=review_count,
-                         recent_uploads=recent_uploads,
-                         daily_remaining_mb=daily_remaining_mb,
-                         demo_user=demo_user,
-                         xp_threshold_reached=xp_threshold_reached,
-                         welcome_message=welcome_message,
-                         milestone_message=milestone_message,
-                         daily_limit_message=daily_limit_message)
+        app.logger.error(f"Dashboard error: {e}")
+        import traceback
+        app.logger.error(f"Dashboard traceback: {traceback.format_exc()}")
+        return render_template('error.html', error=f"Dashboard error: {str(e)}")
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     """File upload endpoint"""
     try:
-        # Check if user entered their name
-        user_name = session.get('user_name')
-        demo_user_id = session.get('demo_user_id')
-        
-        if not user_name or not demo_user_id:
-            return redirect(url_for('name_entry'))
-            
-        # Get demo user from session
-        demo_user = User.query.get(demo_user_id)
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
         if not demo_user:
-            return redirect(url_for('name_entry'))
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+        
+        user_name = session.get('user_name', 'Demo User')
     except Exception as e:
         app.logger.error(f"Upload route error: {e}")
-        return redirect(url_for('name_entry'))
+        return render_template('error.html', error=f"Upload error: {str(e)}")
     
     # Check XP threshold
     if demo_user.xp_points >= 1500:
@@ -445,20 +401,15 @@ def upload_file():
 def review_content():
     """Content review endpoint - shows all uploaded files for review"""
     try:
-        # Check if user entered their name
-        user_name = session.get('user_name')
-        demo_user_id = session.get('demo_user_id')
-        
-        if not user_name or not demo_user_id:
-            return redirect(url_for('name_entry'))
-            
-        # Get demo user from session
-        demo_user = User.query.get(demo_user_id)
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
         if not demo_user:
-            return redirect(url_for('name_entry'))
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+        
+        user_name = session.get('user_name', 'Demo User')
     except Exception as e:
         app.logger.error(f"Review route error: {e}")
-        return redirect(url_for('name_entry'))
+        return render_template('error.html', error=f"Review error: {str(e)}")
     
     # Check XP threshold  
     if demo_user.xp_points >= 1500:
@@ -496,17 +447,16 @@ def review_content():
 @app.route('/review/<int:upload_id>', methods=['GET', 'POST'])
 def review_upload(upload_id):
     """Review a specific upload"""
-    # Check if user entered their name
-    user_name = session.get('user_name')
-    demo_user_id = session.get('demo_user_id')
-    
-    if not user_name or not demo_user_id:
-        return redirect(url_for('name_entry'))
+    try:
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
+        if not demo_user:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
         
-    # Get demo user from session
-    demo_user = User.query.get(demo_user_id)
-    if not demo_user:
-        return redirect(url_for('name_entry'))
+        user_name = session.get('user_name', 'Demo User')
+    except Exception as e:
+        app.logger.error(f"Review upload route error: {e}")
+        return render_template('error.html', error=f"Review upload error: {str(e)}")
     
     # Check XP threshold  
     if demo_user.xp_points >= 1500:
@@ -610,12 +560,16 @@ def review_upload(upload_id):
 @app.route('/rating', methods=['GET', 'POST'])
 def rate_website():
     """Website rating and feedback page"""
-    # Check if user entered their name
-    user_name = session.get('user_name')
-    demo_user_id = session.get('demo_user_id')
-    
-    if not user_name or not demo_user_id:
-        return redirect(url_for('name_entry'))
+    try:
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
+        if not demo_user:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+        
+        user_name = session.get('user_name', 'Demo User')
+    except Exception as e:
+        app.logger.error(f"Rating route error: {e}")
+        return render_template('error.html', error=f"Rating error: {str(e)}")
         
     # Get demo user from session
     demo_user = User.query.get(demo_user_id)
@@ -644,17 +598,16 @@ def rate_website():
 @app.route('/profile')
 def profile():
     """User profile page"""
-    # Check if user entered their name
-    user_name = session.get('user_name')
-    demo_user_id = session.get('demo_user_id')
-    
-    if not user_name or not demo_user_id:
-        return redirect(url_for('name_entry'))
+    try:
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
+        if not demo_user:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
         
-    # Get demo user from session
-    demo_user = User.query.get(demo_user_id)
-    if not demo_user:
-        return redirect(url_for('name_entry'))
+        user_name = session.get('user_name', 'Demo User')
+    except Exception as e:
+        app.logger.error(f"Profile route error: {e}")
+        return render_template('error.html', error=f"Profile error: {str(e)}")
         
     # Get user's strikes and violation history
     strikes = Strike.query.filter_by(user_id=demo_user.id)\
@@ -665,14 +618,14 @@ def profile():
 
 @app.route('/delete_upload/<int:upload_id>')
 def delete_upload(upload_id):
-    # Get demo user from session
-    demo_user_id = session.get('demo_user_id')
-    if not demo_user_id:
-        return redirect(url_for('name_entry'))
-        
-    demo_user = User.query.get(demo_user_id)
-    if not demo_user:
-        return redirect(url_for('name_entry'))
+    try:
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
+        if not demo_user:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+    except Exception as e:
+        app.logger.error(f"Delete upload route error: {e}")
+        return render_template('error.html', error=f"Delete upload error: {str(e)}")
         
     upload = Upload.query.get_or_404(upload_id)
     
@@ -709,14 +662,14 @@ def delete_upload(upload_id):
 
 @app.route('/admin')
 def admin_panel():
-    # Get demo user from session
-    demo_user_id = session.get('demo_user_id')
-    if not demo_user_id:
-        return redirect(url_for('name_entry'))
-        
-    demo_user = User.query.get(demo_user_id)
-    if not demo_user:
-        return redirect(url_for('name_entry'))
+    try:
+        # Ensure demo user exists
+        demo_user = ensure_demo_users()
+        if not demo_user:
+            return render_template('error.html', error="Failed to create demo user. Please try again.")
+    except Exception as e:
+        app.logger.error(f"Admin route error: {e}")
+        return render_template('error.html', error=f"Admin error: {str(e)}")
         
     # Simple admin check (in production, use proper role system)
     if demo_user.email not in ['admin@alphanex.com']:
