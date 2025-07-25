@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Framework**: Flask web application with SQLAlchemy ORM
-- **Database**: SQLite by default (configurable via DATABASE_URL environment variable)
+- **Database**: SQLite for maximum hosting compatibility
 - **Authentication**: Flask-Login for session management with password hashing
 - **File Handling**: Werkzeug secure file uploads with size/type validation
 - **Background Tasks**: APScheduler for automated periodic tasks
@@ -217,7 +217,7 @@ The platform is designed to handle growth from small community to large-scale co
 
 ### July 2025 - Fresh User Experience & Migration Completion
 - ✅ Successfully completed migration from Replit Agent to standard Replit environment
-- ✅ Configured PostgreSQL database for production-ready data persistence
+- ✅ Configured SQLite database for maximum hosting provider compatibility
 - ✅ Implemented fresh user experience: each name entry creates completely clean slate
 - ✅ Added automatic data reset functionality to clear previous users' activities
 - ✅ Users now get fresh daily limits, fresh XP starting at 500, and no previous uploads/reviews
