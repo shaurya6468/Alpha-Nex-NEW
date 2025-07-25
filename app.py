@@ -33,6 +33,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
     "pool_timeout": 20,
+    "pool_size": 10,
+    "max_overflow": 20,
+    "connect_args": {"connect_timeout": 10, "application_name": "alphanex"}
 }
 
 # Configure upload settings
@@ -44,6 +47,8 @@ db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'name_entry'
+login_manager.login_message = None  # Disable login required messages
+login_manager.session_protection = "strong"
 
 
 @login_manager.user_loader
@@ -65,7 +70,27 @@ with app.app_context():
     import models  # noqa: F401
     import routes  # noqa: F401
 
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        app.logger.error(f"Database initialization error: {e}")
+        # Continue running even if DB init fails
+
+# Add error handlers to prevent 502 gateway errors
+@app.errorhandler(500)
+def internal_server_error(e):
+    app.logger.error(f"Internal server error: {e}")
+    return "Internal server error occurred. Please try again.", 500
+
+@app.errorhandler(502)
+def bad_gateway(e):
+    app.logger.error(f"Bad gateway error: {e}")
+    return "Service temporarily unavailable. Please try again.", 502
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"Unhandled exception: {e}")
+    return "An unexpected error occurred. Please try again.", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
