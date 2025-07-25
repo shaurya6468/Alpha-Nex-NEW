@@ -25,7 +25,6 @@ class UploadForm(FlaskForm):
     file = FileField('File', validators=[FileRequired()])
     description = TextAreaField('Description', validators=[DataRequired(), Length(min=10, max=1000)])
     category = SelectField('Category', validators=[DataRequired()], choices=[
-        ('video', 'Video'),
         ('audio', 'Audio'), 
         ('document', 'Document/PDF'),
         ('code', 'Code'),
