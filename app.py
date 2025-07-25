@@ -34,8 +34,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_timeout": 20,
     "pool_size": 10,
-    "max_overflow": 20,
-    "connect_args": {"connect_timeout": 10, "application_name": "alphanex"}
+    "max_overflow": 20
 }
 
 # Configure upload settings
