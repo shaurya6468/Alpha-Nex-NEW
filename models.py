@@ -99,7 +99,7 @@ class Upload(db.Model):
         self.deletion_deadline = datetime.utcnow() + timedelta(hours=48)
     
     def get_average_rating(self):
-        reviews_list = list(self.reviews)
+        reviews_list = [review for review in self.reviews]
         if not reviews_list:
             return None
         good_reviews = sum(1 for r in reviews_list if r.rating == 'good')
