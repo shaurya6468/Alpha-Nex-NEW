@@ -22,13 +22,23 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <h6 class="fw-bold mb-0">{{ upload.original_filename[:30] }}{% if upload.original_filename|length > 30 %}...{% endif %}</h6>
-                                        <span class="badge bg-light text-dark">{{ upload.category.title() }}</span>
+                                        <div class="d-flex gap-2">
+                                            {% if upload.user.email == 'demo_creator@alphanex.com' %}
+                                            <span class="badge bg-primary">
+                                                <i class="fas fa-flask me-1"></i>Demo Content
+                                            </span>
+                                            {% endif %}
+                                            <span class="badge bg-light text-dark">{{ upload.category.title() }}</span>
+                                        </div>
                                     </div>
                                     
                                     <div class="mb-3">
                                         <small class="text-muted d-block">
                                             <i class="fas fa-file me-1"></i>{{ "%.1f"|format(upload.file_size / 1024 / 1024) }} MB
                                             <i class="fas fa-clock ms-2 me-1"></i>{{ upload.uploaded_at.strftime('%Y-%m-%d %H:%M') }}
+                                            {% if upload.user.email == 'demo_creator@alphanex.com' %}
+                                            <i class="fas fa-flask ms-2 me-1 text-primary"></i><span class="text-primary">Sample for testing</span>
+                                            {% endif %}
                                         </small>
                                     </div>
                                     
@@ -90,6 +100,7 @@
                                 <li>Maximum 5 reviews per upload</li>
                                 <li>Cannot review your own uploads</li>
                                 <li>Earn 10 XP for each review submitted</li>
+                                <li><i class="fas fa-flask text-primary"></i> <span class="text-primary">Demo Content</span> = Sample files for testing the platform</li>
                             </ul>
                         </div>
                         <div class="col-md-6">

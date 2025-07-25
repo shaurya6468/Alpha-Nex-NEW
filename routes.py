@@ -439,7 +439,7 @@ def review_content():
     # Show all uploads except those uploaded by demo user
     reviewed_upload_ids = [r.upload_id for r in demo_user.reviews]
     
-    uploads = Upload.query.filter(
+    uploads = Upload.query.join(User).filter(
         Upload.user_id != demo_user.id,  # Cannot review own uploads
         ~Upload.id.in_(reviewed_upload_ids)  # Haven't reviewed yet
     ).order_by(Upload.uploaded_at.desc()).all()
