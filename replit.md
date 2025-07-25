@@ -225,3 +225,4 @@ The platform is designed to handle growth from small community to large-scale co
 - ✅ Fixed database connection issues and SQLAlchemy configuration
 - ✅ Improved user flow with personalized fresh experience for each new name entry
 - ✅ Platform ready for deployment with robust client/server separation
+- ✅ Simple reset system: every name entry = fresh uploads, fresh used MB, fresh daily limits

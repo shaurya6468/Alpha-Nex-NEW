@@ -199,7 +199,7 @@ def name_entry():
             flash('Name can only contain letters and spaces.', 'error')
             return render_template('name_entry.html')
         
-        # Reset all demo data for fresh experience
+        # Clear all previous data for completely fresh experience
         reset_all_demo_data()
         
         # Store name in session and redirect to dashboard
@@ -220,45 +220,31 @@ def dashboard():
     if not user_name:
         return redirect(url_for('name_entry'))
     
-    # Get or create fresh demo user for each session
-    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
-    if not demo_user:
-        demo_user = User()
-        demo_user.name = user_name  # Use the entered name
-        demo_user.email = 'demo@alphanex.com'
-        demo_user.password_hash = generate_password_hash('demo123')
-        demo_user.xp_points = 500  # Fresh starting XP
-        demo_user.daily_upload_count = 0  # Fresh daily limits
-        demo_user.daily_upload_bytes = 0
-        demo_user.daily_review_count = 0
-        demo_user.daily_upload_reset = datetime.utcnow()
-        demo_user.daily_review_reset = datetime.utcnow()
-        db.session.add(demo_user)
-        db.session.commit()
-    else:
-        # Reset the demo user to fresh state
-        demo_user.name = user_name
-        demo_user.xp_points = 500
-        demo_user.daily_upload_count = 0
-        demo_user.daily_upload_bytes = 0
-        demo_user.daily_review_count = 0
-        demo_user.daily_upload_reset = datetime.utcnow()
-        demo_user.daily_review_reset = datetime.utcnow()
-        db.session.commit()
+    # Always create completely fresh demo user
+    demo_user = User()
+    demo_user.name = user_name
+    demo_user.email = 'demo@alphanex.com'
+    demo_user.password_hash = generate_password_hash('demo123')
+    demo_user.xp_points = 500  # Fresh starting XP
+    demo_user.daily_upload_count = 0  # Fresh daily limits - reset to 0
+    demo_user.daily_upload_bytes = 0  # Fresh upload bytes - reset to 0  
+    demo_user.daily_review_count = 0  # Fresh review count - reset to 0
+    demo_user.daily_upload_reset = datetime.utcnow()
+    demo_user.daily_review_reset = datetime.utcnow()
+    db.session.add(demo_user)
+    db.session.commit()
     
-    # Get or create fresh test user for demo files
-    test_user = User.query.filter_by(email='testuser@alphanex.com').first()
-    if not test_user:
-        test_user = User()
-        test_user.name = 'Test User'
-        test_user.email = 'testuser@alphanex.com'
-        test_user.password_hash = generate_password_hash('test123')
-        test_user.xp_points = 300
-        db.session.add(test_user)
-        db.session.commit()
-        
-        # Create fresh test files from test user for demo user to review
-        create_test_files(test_user)
+    # Always create fresh test user for demo files
+    test_user = User()
+    test_user.name = 'Test User'
+    test_user.email = 'testuser@alphanex.com'
+    test_user.password_hash = generate_password_hash('test123')
+    test_user.xp_points = 300
+    db.session.add(test_user)
+    db.session.commit()
+    
+    # Create fresh test files from test user for demo user to review
+    create_test_files(test_user)
     
     # Set demo user as current user context (no authentication needed)
     # login_user(demo_user)  # Removed since we don't need sessions
