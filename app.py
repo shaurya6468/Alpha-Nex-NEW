@@ -42,28 +42,48 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
-# Initialize extensions
-db.init_app(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'name_entry'
-login_manager.login_message = None  # Disable login required messages
-login_manager.session_protection = "strong"
+# Initialize extensions with error handling
+try:
+    db.init_app(app)
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'name_entry'
+    login_manager.login_message = ""  # Empty string instead of None
+    login_manager.session_protection = "strong"
+except Exception as e:
+    app.logger.error(f"Extension initialization failed: {e}")
+    # Create minimal fallback login manager
+    login_manager = LoginManager()
+    login_manager.init_app(app)
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    from models import User
-    return User.query.get(int(user_id))
+    try:
+        from models import User
+        return User.query.get(int(user_id))
+    except Exception as e:
+        app.logger.error(f"User loading failed: {e}")
+        return None
 
 
-# Create upload directory
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Create upload directory with error handling
+try:
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+except Exception as e:
+    app.logger.error(f"Upload directory creation failed: {e}")
+    # Fallback to temp directory
+    import tempfile
+    app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
 
-# Initialize scheduler for automated tasks
-scheduler = BackgroundScheduler()
-scheduler.start()
-atexit.register(lambda: scheduler.shutdown())
+# Initialize scheduler for automated tasks with error handling
+try:
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+except Exception as e:
+    app.logger.error(f"Scheduler initialization failed: {e}")
+    # Continue without scheduler - not critical for basic functionality
 
 with app.app_context():
     # Import models to ensure tables are created
@@ -76,21 +96,45 @@ with app.app_context():
         app.logger.error(f"Database initialization error: {e}")
         # Continue running even if DB init fails
 
-# Add error handlers to prevent 502 gateway errors
+# Comprehensive error handlers to prevent crashes
+@app.errorhandler(404)
+def not_found(e):
+    app.logger.warning(f"404 error: {e}")
+    try:
+        from flask import render_template
+        return render_template('404.html'), 404
+    except:
+        return "Page not found. <a href='/'>Return to homepage</a>", 404
+
 @app.errorhandler(500)
 def internal_server_error(e):
     app.logger.error(f"Internal server error: {e}")
-    return "Internal server error occurred. Please try again.", 500
+    try:
+        from flask import render_template
+        return render_template('500.html'), 500
+    except:
+        return "Internal server error occurred. <a href='/'>Return to homepage</a>", 500
 
 @app.errorhandler(502)
 def bad_gateway(e):
     app.logger.error(f"Bad gateway error: {e}")
-    return "Service temporarily unavailable. Please try again.", 502
+    return "Service temporarily unavailable. <a href='/'>Return to homepage</a>", 502
+
+@app.errorhandler(413)
+def request_entity_too_large(e):
+    app.logger.warning(f"File too large: {e}")
+    return "File too large. Maximum file size is 100MB. <a href='/upload'>Try again</a>", 413
 
 @app.errorhandler(Exception)
 def handle_exception(e):
     app.logger.error(f"Unhandled exception: {e}")
-    return "An unexpected error occurred. Please try again.", 500
+    import traceback
+    app.logger.error(f"Traceback: {traceback.format_exc()}")
+    try:
+        from flask import render_template
+        return render_template('error.html', error=str(e)), 500
+    except:
+        return f"An unexpected error occurred: {str(e)}. <a href='/'>Return to homepage</a>", 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
