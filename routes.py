@@ -16,7 +16,7 @@ from forms import UploadForm, ReviewForm, RatingForm
 STATIC_USER_ID = 1
 
 def get_or_create_static_user():
-    """Get or create the single static user for the platform"""
+    """Get or create the single static user for the platform with fresh experience"""
     user = User.query.get(STATIC_USER_ID)
     if not user:
         user = User()
@@ -37,25 +37,148 @@ def get_or_create_static_user():
         create_test_content()
         
         db.session.commit()
+    else:
+        # Reset user experience for fresh start every time
+        reset_user_experience(user)
+    
     return user
+
+def reset_user_experience(user):
+    """Reset user's daily limits and usage for fresh experience"""
+    try:
+        # Reset daily limits and usage
+        user.daily_upload_count = 0
+        user.daily_upload_bytes = 0
+        user.daily_review_count = 0
+        user.daily_upload_reset = datetime.utcnow()
+        user.daily_review_reset = datetime.utcnow()
+        
+        # Clear user's uploads to give fresh experience
+        user_uploads = Upload.query.filter_by(user_id=user.id).all()
+        for upload in user_uploads:
+            db.session.delete(upload)
+        
+        # Clear user's reviews to reset review experience
+        user_reviews = Review.query.filter_by(reviewer_id=user.id).all()
+        for review in user_reviews:
+            db.session.delete(review)
+        
+        # Reset XP to starting value for consistent experience
+        user.xp_points = 500
+        
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error resetting user experience: {e}")
+        # Continue even if reset fails
 
 def create_test_content():
     """Create sample content for review system"""
     test_files = [
-
         {
-            'filename': 'sample_audio.mp3',
-            'original_filename': '**DEMO FILE** Podcast Episode',
+            'filename': 'sample_audio_podcast.mp3',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Tech Podcast Episode',
             'file_size': 8388608,  # 8MB
-            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Technology podcast discussion about AI trends',
-            'category': 'Audio'
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Technology podcast discussion about AI trends and future innovations',
+            'category': 'audio'
         },
         {
-            'filename': 'sample_document.pdf',
-            'original_filename': '**DEMO FILE** Research Paper',
+            'filename': 'sample_music.mp3',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Background Music Track',
+            'file_size': 5242880,  # 5MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Instrumental background music for content creation',
+            'category': 'audio'
+        },
+        {
+            'filename': 'research_paper.pdf',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - AI Research Paper',
             'file_size': 2097152,  # 2MB
-            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Academic research on machine learning applications',
-            'category': 'Research'
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Academic research paper on machine learning applications in healthcare',
+            'category': 'document'
+        },
+        {
+            'filename': 'tutorial_guide.pdf',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Programming Tutorial',
+            'file_size': 3145728,  # 3MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Comprehensive programming tutorial for Python beginners',
+            'category': 'document'
+        },
+        {
+            'filename': 'data_analysis.py',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Python Data Analysis Script',
+            'file_size': 524288,  # 512KB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Python script for data analysis and visualization using pandas',
+            'category': 'code'
+        },
+        {
+            'filename': 'web_scraper.js',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - JavaScript Web Scraper',
+            'file_size': 262144,  # 256KB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - JavaScript web scraping tool for data collection',
+            'category': 'code'
+        },
+        {
+            'filename': 'project_notes.txt',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Project Documentation',
+            'file_size': 131072,  # 128KB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Detailed project notes and development documentation',
+            'category': 'text'
+        },
+        {
+            'filename': 'meeting_minutes.txt',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Team Meeting Notes',
+            'file_size': 65536,  # 64KB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Minutes from team meetings and project discussions',
+            'category': 'text'
+        },
+        {
+            'filename': 'logo_design.png',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Company Logo Design',
+            'file_size': 1048576,  # 1MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Professional logo design for branding purposes',
+            'category': 'image'
+        },
+        {
+            'filename': 'infographic.jpg',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Data Infographic',
+            'file_size': 2097152,  # 2MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Visual data representation and statistics infographic',
+            'category': 'image'
+        },
+        {
+            'filename': 'website_mockup.png',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Website Mockup',
+            'file_size': 1572864,  # 1.5MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - UI/UX design mockup for web application',
+            'category': 'image'
+        },
+        {
+            'filename': 'source_code.zip',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Source Code Archive',
+            'file_size': 4194304,  # 4MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Complete source code archive for web application project',
+            'category': 'archive'
+        },
+        {
+            'filename': 'assets_pack.zip',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Design Assets Pack',
+            'file_size': 6291456,  # 6MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Collection of design assets including icons, fonts, and graphics',
+            'category': 'archive'
+        },
+        {
+            'filename': 'backup_files.tar.gz',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Project Backup',
+            'file_size': 5242880,  # 5MB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Compressed backup of project files and database',
+            'category': 'archive'
+        },
+        {
+            'filename': 'documentation.md',
+            'original_filename': '**DEMO FILE FOR TESTING PURPOSES ONLY** - API Documentation',
+            'file_size': 327680,  # 320KB
+            'description': '**DEMO FILE FOR TESTING PURPOSES ONLY** - Comprehensive API documentation with examples and usage guidelines',
+            'category': 'text'
         }
     ]
     
@@ -97,6 +220,11 @@ def name_entry():
         name = request.form.get('name', '').strip()
         if name and len(name) >= 2 and len(name) <= 50 and name.replace(' ', '').isalpha():
             session['user_name'] = name
+            
+            # Reset user experience for fresh start
+            user = get_or_create_static_user()
+            reset_user_experience(user)
+            
             return redirect(url_for('dashboard'))
         else:
             flash('Please enter a valid name (2-50 characters, letters and spaces only)', 'error')
