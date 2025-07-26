@@ -1,162 +1,153 @@
 {% extends "base.html" %}
 
-{% block title %}User Profile - Alpha Nex{% endblock %}
+{% block title %}Profile - Alpha Nex{% endblock %}
 
 {% block content %}
 <div class="row">
-    <!-- Profile Overview -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
+    <div class="col-md-4">
+        <div class="card">
             <div class="card-body text-center">
-                <div class="bg-black text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                     style="width: 80px; height: 80px;">
-                    <i class="fas fa-user fa-2x"></i>
-                </div>
-                <h4 class="fw-bold text-black mb-1">{{ current_user.name }}</h4>
-                <p class="text-muted mb-3">{{ current_user.email }}</p>
-                
-                <!-- Account Status -->
-                <div class="d-flex justify-content-center gap-2 mb-3">
-                    {% if current_user.is_banned %}
-                    <span class="badge bg-danger">
-                        <i class="fas fa-ban me-1"></i>Banned
-                    </span>
-                    {% else %}
-                    <span class="badge bg-success">
-                        <i class="fas fa-check me-1"></i>Active
-                    </span>
-                    {% endif %}
-                </div>
-                
-                <!-- XP Points Display -->
-                <div class="bg-light rounded p-3">
-                    <h2 class="fw-bold text-black mb-0">{{ current_user.xp_points }}</h2>
-                    <small class="text-muted">XP Points Available</small>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Strike Summary -->
-        <div class="card border-0 {% if current_user.uploader_strikes > 0 or current_user.reviewer_strikes > 0 %}bg-warning bg-opacity-10 border-warning{% else %}bg-light{% endif %}">
-            <div class="card-header bg-transparent">
-                <h6 class="fw-bold text-black mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Strike Summary
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="row text-center g-3">
-                    <div class="col-6">
-                        <div class="fw-bold text-{% if current_user.uploader_strikes >= 3 %}danger{% elif current_user.uploader_strikes > 0 %}warning{% else %}success{% endif %}">
-                            {{ current_user.uploader_strikes }}/3
-                        </div>
-                        <small class="text-muted">Uploader Strikes</small>
-                    </div>
-                    <div class="col-6">
-                        <div class="fw-bold text-{% if current_user.reviewer_strikes >= 3 %}danger{% elif current_user.reviewer_strikes > 0 %}warning{% else %}success{% endif %}">
-                            {{ current_user.reviewer_strikes }}/3
-                        </div>
-                        <small class="text-muted">Reviewer Strikes</small>
-                    </div>
-                </div>
-                {% if current_user.uploader_strikes >= 3 or current_user.reviewer_strikes >= 3 %}
-                <div class="alert alert-danger mt-3 mb-0">
-                    <small>
-                        <i class="fas fa-ban me-1"></i>
-                        Account banned due to maximum strikes reached.
-                    </small>
-                </div>
-                {% endif %}
+                <i class="fas fa-user-circle fa-5x text-primary mb-3"></i>
+                <h4>{{ user.username }}</h4>
+                <p class="text-muted">{{ user.email }}</p>
+                <span class="xp-badge fs-5">{{ user.xp_points }} XP</span>
+                <hr>
+                <p class="small text-muted">
+                    <i class="fas fa-calendar me-2"></i>
+                    Member since {{ user.created_at.strftime('%B %Y') }}
+                </p>
             </div>
         </div>
     </div>
     
-    <!-- Detailed Information -->
-    <div class="col-lg-8">
-        <!-- Account Statistics -->
-        <div class="row g-4 mb-4">
-            <div class="col-sm-6 col-lg-3">
-                <div class="card border-0 bg-light text-center">
+    <div class="col-md-8">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card text-center">
                     <div class="card-body">
-                        <i class="fas fa-cloud-upload-alt fa-2x text-black mb-2"></i>
-                        <h4 class="fw-bold text-black mb-1">{{ current_user.uploads|length }}</h4>
-                        <small class="text-muted">Total Uploads</small>
+                        <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                        <h3>{{ uploads|length }}</h3>
+                        <p class="mb-0 small">Total Uploads</p>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card border-0 bg-light text-center">
+            <div class="col-md-4">
+                <div class="card text-center">
                     <div class="card-body">
-                        <i class="fas fa-star fa-2x text-black mb-2"></i>
-                        <h4 class="fw-bold text-black mb-1">{{ current_user.reviews|length }}</h4>
-                        <small class="text-muted">Reviews Given</small>
+                        <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                        <h3>{{ reviews|length }}</h3>
+                        <p class="mb-0 small">Reviews Given</p>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card border-0 bg-light text-center">
+            <div class="col-md-4">
+                <div class="card text-center">
                     <div class="card-body">
-                        <i class="fas fa-coins fa-2x text-black mb-2"></i>
-                        <h4 class="fw-bold text-black mb-1">{{ current_user.xp_points }}</h4>
-                        <small class="text-muted">XP Points</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-6 col-lg-3">
-                <div class="card border-0 bg-light text-center">
-                    <div class="card-body">
-                        <i class="fas fa-calendar fa-2x text-black mb-2"></i>
-                        <h4 class="fw-bold text-black mb-1">{{ current_user.created_at.strftime('%b %Y') }}</h4>
-                        <small class="text-muted">Member Since</small>
+                        <i class="fas fa-trophy fa-2x text-success mb-2"></i>
+                        <h3>{{ (user.xp_points / 100) | round(1) }}</h3>
+                        <p class="mb-0 small">Level</p>
                     </div>
                 </div>
             </div>
         </div>
         
-
-        
-        <!-- Strike History -->
-        {% if strikes %}
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="fw-bold text-black mb-0">
-                    <i class="fas fa-history me-2"></i>Violation History
+        <!-- Upload History -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload History
                 </h5>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body">
+                {% if uploads %}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="bg-light">
+                    <table class="table table-hover">
+                        <thead>
                             <tr>
-                                <th class="border-0 fw-medium">Type</th>
-                                <th class="border-0 fw-medium">Reason</th>
-                                <th class="border-0 fw-medium">Date</th>
+                                <th>File</th>
+                                <th>Category</th>
+                                <th>Size</th>
+                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for strike in strikes %}
+                            {% for upload in uploads[:10] %}
                             <tr>
                                 <td>
-                                    <span class="badge bg-{% if strike.strike_type == 'uploader' %}warning{% else %}info{% endif %}">
-                                        <i class="fas fa-{% if strike.strike_type == 'uploader' %}cloud-upload-alt{% else %}star{% endif %} me-1"></i>
-                                        {{ strike.strike_type.title() }}
-                                    </span>
+                                    <strong>{{ upload.original_filename }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ upload.description[:50] }}...</small>
                                 </td>
                                 <td>
-                                    <span class="text-muted">{{ strike.reason }}</span>
+                                    <span class="badge bg-secondary">{{ upload.category.title() }}</span>
                                 </td>
-                                <td>
-                                    <small class="text-muted">{{ strike.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                                </td>
+                                <td>{{ (upload.file_size / 1024) | round(1) }} KB</td>
+                                <td>{{ upload.uploaded_at.strftime('%m/%d/%Y') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                    <p>No uploads yet</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Your First File
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
         
-
+        <!-- Review History -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-star me-2"></i>Review History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if reviews %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>File Reviewed</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews[:10] %}
+                            <tr>
+                                <td>{{ review.upload.original_filename }}</td>
+                                <td>
+                                    {% if review.rating == 'good' %}
+                                    <span class="badge bg-success">Good</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Poor</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ review.comment[:50] if review.comment else 'No comment' }}...</td>
+                                <td>{{ review.reviewed_at.strftime('%m/%d/%Y') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-star fa-3x mb-3"></i>
+                    <p>No reviews yet</p>
+                    <a href="{{ url_for('review') }}" class="btn btn-warning">
+                        <i class="fas fa-star me-2"></i>Start Reviewing
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,241 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}Alpha Nex - Content Platform with AI Integration{% endblock %}
-
 {% block content %}
-<!-- Hero Section -->
-<div class="bg-black text-white py-5">
-    <div class="container">
-        <div class="row align-items-center">
-            <div class="col-lg-6">
-                <h1 class="display-4 fw-bold mb-4">
-                    <i class="fas fa-cube me-3"></i>Alpha Nex
-                </h1>
-                <p class="lead mb-4">
-                    A comprehensive platform for collecting and reviewing user-generated content with built-in AI integration and innovative reward systems.
-                </p>
-                <p class="mb-4">
-                    <strong>Earn XP points that can be converted to money once our web app goes live.</strong>
-                </p>
-                
-                <div class="d-flex gap-3 flex-wrap">
-                    {% if not current_user.is_authenticated %}
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-white btn-lg">
-                        <i class="fas fa-rocket me-2"></i>Get Started with Replit
-                    </a>
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-sign-in-alt me-2"></i>Login with Replit
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-white btn-lg">
-                        <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-lg-6 text-center">
-                <i class="fas fa-cube display-1 text-white-50"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Features Section -->
-<div class="container py-5">
-    <div class="text-center mb-5">
-        <h2 class="fw-bold text-black mb-3">Platform Features</h2>
-        <p class="text-muted">Professional content management with AI-powered quality assurance</p>
-    </div>
-    
-    <div class="row g-4">
-        <!-- Upload System -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-cloud-upload-alt fa-lg"></i>
-                    </div>
-                    <h5 class="fw-bold text-black">Content Upload</h5>
-                    <p class="text-muted small">
-                        Upload videos, audio, PDFs, code, and text with AI consent and duplicate detection.
-                        500MB daily limit with real-time tracking.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Review System -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-star fa-lg"></i>
-                    </div>
-                    <h5 class="fw-bold text-black">Peer Review</h5>
-                    <p class="text-muted small">
-                        Rate content quality with detailed reviews. Earn XP points for quality feedback 
-                        and help maintain platform standards.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Strike System -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-shield-alt fa-lg"></i>
-                    </div>
-                    <h5 class="fw-bold text-black">Quality Control</h5>
-                    <p class="text-muted small">
-                        Dual three-strike system for uploaders and reviewers. 
-                        Automatic moderation with penalty management.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Rewards -->
-        <div class="col-md-6 col-lg-3">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="bg-dark text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
-                        <i class="fas fa-coins fa-lg"></i>
-                    </div>
-                    <h5 class="fw-bold text-black">XP Rewards</h5>
-                    <p class="text-muted small">
-                        Earn XP points for quality uploads and reviews. 
-                        Request withdrawals through admin-approval system.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- How It Works Section -->
-<div class="bg-light py-5">
-    <div class="container">
+<div class="row justify-content-center">
+    <div class="col-md-8">
         <div class="text-center mb-5">
-            <h2 class="fw-bold text-black mb-3">How It Works</h2>
-            <p class="text-muted">Simple process to start earning XP points</p>
+            <h1 class="display-4 fw-bold text-primary">
+                <i class="fas fa-cloud-upload-alt me-3"></i>Alpha Nex
+            </h1>
+            <p class="lead text-muted">Your premium content management platform</p>
         </div>
-        
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="d-flex">
-                    <div class="bg-black text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style="width: 40px; height: 40px; min-width: 40px;">
-                        <span class="fw-bold">1</span>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold text-black">Login & Start</h5>
-                        <p class="text-muted mb-0">
-                            Login with your Replit account and immediately start uploading content.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="d-flex">
-                    <div class="bg-black text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style="width: 40px; height: 40px; min-width: 40px;">
-                        <span class="fw-bold">2</span>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold text-black">Upload & Review</h5>
-                        <p class="text-muted mb-0">
-                            Upload quality content or review others' submissions. Both activities earn XP points.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4">
-                <div class="d-flex">
-                    <div class="bg-black text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                         style="width: 40px; height: 40px; min-width: 40px;">
-                        <span class="fw-bold">3</span>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold text-black">Earn & Withdraw</h5>
-                        <p class="text-muted mb-0">
-                            Accumulate XP points and request withdrawals when the platform goes live.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Stats Section -->
-{% if current_user.is_authenticated %}
-<div class="container py-5">
-    <div class="row text-center g-4">
-        <div class="col-6 col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <h3 class="fw-bold text-black mb-1">{{ current_user.xp_points }}</h3>
-                    <small class="text-muted">Your XP Points</small>
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-upload fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Upload Content</h5>
+                        <p class="card-text">Share your files and earn XP points for quality uploads.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-star fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Review Content</h5>
+                        <p class="card-text">Help maintain quality by reviewing uploads from other users.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-trophy fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Earn XP Points</h5>
+                        <p class="card-text">Build your reputation and unlock new features as you contribute.</p>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <h3 class="fw-bold text-black mb-1">{{ current_user.uploads|length }}</h3>
-                    <small class="text-muted">Uploads</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <h3 class="fw-bold text-black mb-1">{{ current_user.reviews|length }}</h3>
-                    <small class="text-muted">Reviews</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <h3 class="fw-bold text-black mb-1">
-                        {% if current_user.is_banned %}
-                        <span class="text-danger">Banned</span>
-                        {% else %}
-                        <span class="text-success">Active</span>
-                        {% endif %}
-                    </h3>
-                    <small class="text-muted">Status</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
 
-<!-- CTA Section -->
-{% if not current_user.is_authenticated %}
-<div class="bg-black text-white py-5">
-    <div class="container text-center">
-        <h2 class="fw-bold mb-3">Ready to Start Earning?</h2>
-        <p class="lead mb-4">Join Alpha Nex today and start building your XP points for future rewards.</p>
-        <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-white btn-lg">
-                <i class="fas fa-user-plus me-2"></i>Start with Replit
+        <div class="text-center">
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-user-plus me-2"></i>Get Started
             </a>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-lg">
-                <i class="fas fa-sign-in-alt me-2"></i>Login with Replit
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
             </a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endif %}
 {% endblock %}
