@@ -46,12 +46,10 @@ def get_or_create_static_user():
 def reset_user_experience(user):
     """Reset user's daily limits and usage for fresh experience"""
     try:
-        # Reset daily limits and usage
+        # Reset usage counters (keeping for tracking but no limits)
         user.daily_upload_count = 0
         user.daily_upload_bytes = 0
         user.daily_review_count = 0
-        user.daily_upload_reset = datetime.utcnow()
-        user.daily_review_reset = datetime.utcnow()
         
         # Clear user's uploads to give fresh experience
         user_uploads = Upload.query.filter_by(user_id=user.id).all()
@@ -292,15 +290,11 @@ def dashboard():
         if review_count >= 10:
             milestone_messages.append("👀 Outstanding! 10+ reviews completed!")
         
-        # Daily progress motivation
-        remaining_uploads = user.get_remaining_uploads_today()
-        remaining_reviews = user.get_remaining_reviews_today()
-        
-        daily_motivation = []
-        if remaining_uploads > 0:
-            daily_motivation.append(f"💡 You can still upload {remaining_uploads} more files today!")
-        if remaining_reviews > 0:
-            daily_motivation.append(f"🔍 {remaining_reviews} reviews remaining - help the community!")
+        # Progress motivation without limits
+        daily_motivation = [
+            f"💡 Keep uploading amazing content!",
+            f"🔍 More reviews help the community grow!"
+        ]
         
         return render_template('dashboard.html', 
                              upload_count=upload_count,
@@ -329,10 +323,7 @@ def upload_file():
         if form.validate_on_submit():
             file = form.file.data
             if file and file.filename:
-                # Check daily upload limit
-                if not user.can_upload_today():
-                    flash('Daily upload limit reached! Try again tomorrow.', 'warning')
-                    return redirect(url_for('dashboard'))
+
                 
                 # Process file upload
                 filename = secure_filename(file.filename)
@@ -365,10 +356,8 @@ def upload_file():
                 upload.status = 'pending'
                 upload.ai_consent = form.ai_consent.data
                 
-                # Update user stats
-                user.xp_points += 20  # Upload XP
-                user.daily_upload_count += 1
-                user.daily_upload_bytes += file_size
+                # Update user stats - give XP for upload
+                user.xp_points += 20
                 
                 db.session.add(upload)
                 db.session.commit()
@@ -453,9 +442,8 @@ def review_upload(upload_id):
             review.description = form.description.data
             review.xp_earned = 15  # Review XP
             
-            # Update user stats
+            # Update user stats - give XP for review
             user.xp_points += 15
-            user.daily_review_count += 1
             
             db.session.add(review)
             db.session.commit()
