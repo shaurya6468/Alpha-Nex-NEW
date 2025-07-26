@@ -1,34 +1,36 @@
-from app import db
-from flask_login import UserMixin
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, UniqueConstraint
 
+from app import db
+from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
+from flask_login import UserMixin
+
+
+# (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    is_verified = db.Column(db.Boolean, default=False)
-    xp_points = db.Column(db.Integer, default=0)
+    __tablename__ = 'users'
+    id = db.Column(db.String, primary_key=True)
+    email = db.Column(db.String, unique=True, nullable=True)
+    first_name = db.Column(db.String, nullable=True)
+    last_name = db.Column(db.String, nullable=True)
+    profile_image_url = db.Column(db.String, nullable=True)
+    
+    # Alpha Nex specific fields
+    xp_points = db.Column(db.Integer, default=500)
     uploader_strikes = db.Column(db.Integer, default=0)
     reviewer_strikes = db.Column(db.Integer, default=0)
     is_banned = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # KYC fields
-    kyc_verified = db.Column(db.Boolean, default=False)
-    document_path = db.Column(db.String(255))
-    selfie_path = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     # Daily upload tracking
     daily_upload_bytes = db.Column(db.Integer, default=0)
     daily_upload_count = db.Column(db.Integer, default=0)
-    daily_upload_reset = db.Column(db.DateTime, default=datetime.utcnow)
+    daily_upload_reset = db.Column(db.DateTime, default=datetime.now)
     
     # Daily review tracking
     daily_review_count = db.Column(db.Integer, default=0)
-    daily_review_reset = db.Column(db.DateTime, default=datetime.utcnow)
+    daily_review_reset = db.Column(db.DateTime, default=datetime.now)
     
     # Relationships
     uploads = db.relationship('Upload', backref='user', lazy=True)
@@ -39,22 +41,22 @@ class User(UserMixin, db.Model):
     def reset_daily_counters_if_needed(self):
         """Reset daily counters if it's a new day"""
         try:
-            current_date = datetime.utcnow().date()
+            current_date = datetime.now().date()
             
             # Reset upload counters if new day
             if self.daily_upload_reset and current_date > self.daily_upload_reset.date():
                 self.daily_upload_bytes = 0
                 self.daily_upload_count = 0
-                self.daily_upload_reset = datetime.utcnow()
+                self.daily_upload_reset = datetime.now()
             elif not self.daily_upload_reset:
-                self.daily_upload_reset = datetime.utcnow()
+                self.daily_upload_reset = datetime.now()
             
             # Reset review counters if new day
             if self.daily_review_reset and current_date > self.daily_review_reset.date():
                 self.daily_review_count = 0
-                self.daily_review_reset = datetime.utcnow()
+                self.daily_review_reset = datetime.now()
             elif not self.daily_review_reset:
-                self.daily_review_reset = datetime.utcnow()
+                self.daily_review_reset = datetime.now()
                 
             db.session.commit()
         except Exception as e:
@@ -127,9 +129,24 @@ class User(UserMixin, db.Model):
             
         db.session.commit()
 
+
+# (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+class OAuth(OAuthConsumerMixin, db.Model):
+    user_id = db.Column(db.String, db.ForeignKey(User.id))
+    browser_session_key = db.Column(db.String, nullable=False)
+    user = db.relationship(User)
+
+    __table_args__ = (UniqueConstraint(
+        'user_id',
+        'browser_session_key',
+        'provider',
+        name='uq_user_browser_session_key_provider',
+    ),)
+
+
 class Upload(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
@@ -138,7 +155,7 @@ class Upload(db.Model):
     category = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     ai_consent = db.Column(db.Boolean, default=False)
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=datetime.now)
     deletion_deadline = db.Column(db.DateTime)
     
     # AI analysis results
@@ -151,7 +168,7 @@ class Upload(db.Model):
     def __init__(self, **kwargs):
         super(Upload, self).__init__(**kwargs)
         # Set deletion deadline to 48 hours from upload
-        self.deletion_deadline = datetime.utcnow() + timedelta(hours=48)
+        self.deletion_deadline = datetime.now() + timedelta(hours=48)
     
     def get_average_rating(self):
         try:
@@ -166,23 +183,23 @@ class Upload(db.Model):
             return None
     
     def can_delete_free(self):
-        return datetime.utcnow() < self.deletion_deadline
+        return datetime.now() < self.deletion_deadline
     
     def get_deletion_penalty(self):
         if self.can_delete_free():
             return 0
         # Penalty increases based on how long after deadline
-        hours_late = (datetime.utcnow() - self.deletion_deadline).total_seconds() / 3600
+        hours_late = (datetime.now() - self.deletion_deadline).total_seconds() / 3600
         return min(int(hours_late * 5), 100)  # Max 100 XP penalty
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     upload_id = db.Column(db.Integer, db.ForeignKey('upload.id'), nullable=False)
-    reviewer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    reviewer_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     rating = db.Column(db.String(10), nullable=False)  # 'good' or 'bad'
     description = db.Column(db.Text, nullable=False)
     xp_earned = db.Column(db.Integer, default=10)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # Quality tracking for reviewer strikes
     is_flagged = db.Column(db.Boolean, default=False)
@@ -190,39 +207,39 @@ class Review(db.Model):
 
 class Strike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     strike_type = db.Column(db.String(20), nullable=False)  # 'uploader' or 'reviewer'
     reason = db.Column(db.String(500), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class WithdrawalRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     amount_xp = db.Column(db.Integer, nullable=False)
     amount_usd = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     payment_method = db.Column(db.String(100))
     payment_details = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     processed_at = db.Column(db.DateTime)
     admin_notes = db.Column(db.Text)
 
 class AdminAction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    admin_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     action_type = db.Column(db.String(50), nullable=False)
     target_id = db.Column(db.Integer, nullable=False)  # ID of affected user/upload/etc
     description = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String, db.ForeignKey('users.id'), nullable=False)
     rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
     category = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text, nullable=False)
     contact_email = db.Column(db.String(120))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     
     # Relationship
     user = db.relationship('User', backref='ratings')

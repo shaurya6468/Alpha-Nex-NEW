@@ -23,7 +23,7 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "alphanex-demo-secret-key-for-session-management-2025")
+app.secret_key = os.environ.get("SESSION_SECRET", "alphanex-replit-auth-secret-key-2025")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database - use PostgreSQL for production and multi-user support
@@ -42,28 +42,10 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # Initialize extensions with error handling
-try:
-    db.init_app(app)
-    login_manager = LoginManager()
-    login_manager.init_app(app)
-    # login_manager.login_view = 'name_entry'  # Disabled for demo mode
-    login_manager.login_message = ""  # Empty string instead of None
-    login_manager.session_protection = "strong"
-except Exception as e:
-    app.logger.error(f"Extension initialization failed: {e}")
-    # Create minimal fallback login manager
-    login_manager = LoginManager()
-    login_manager.init_app(app)
+db.init_app(app)
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    try:
-        from models import User
-        return User.query.get(int(user_id))
-    except Exception as e:
-        app.logger.error(f"User loading failed: {e}")
-        return None
+
 
 
 # Create upload directory with error handling
