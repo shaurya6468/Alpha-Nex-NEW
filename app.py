@@ -24,7 +24,7 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "alphanex-production-secret-key-change-me")
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database - use PostgreSQL for production and multi-user support
