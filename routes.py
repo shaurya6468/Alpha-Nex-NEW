@@ -22,16 +22,25 @@ def make_session_permanent():
 
 @app.route('/')
 def index():
-    """Landing page - shows login for unauthenticated users or redirects to dashboard"""
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    return render_template('index.html')
+    """Landing page - redirects directly to dashboard for demo"""
+    return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
-@require_login
 def dashboard():
-    """Main dashboard for authenticated users"""
-    user = current_user
+    """Main dashboard for demo users"""
+    # Create or get demo user
+    demo_user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not demo_user:
+        demo_user = User(
+            id=str(uuid.uuid4()),
+            email='demo@alphanex.com',
+            first_name='Demo',
+            last_name='User',
+            xp_points=500
+        )
+        db.session.add(demo_user)
+        db.session.commit()
+    user = demo_user
     user.reset_daily_counters_if_needed()
     
     # Get user stats
@@ -53,11 +62,21 @@ def dashboard():
                          recent_uploads=recent_uploads)
 
 @app.route('/upload', methods=['GET', 'POST'])
-@require_login
 def upload():
     """File upload page"""
     form = UploadForm()
-    user = current_user
+    # Get demo user
+    user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not user:
+        user = User(
+            id=str(uuid.uuid4()),
+            email='demo@alphanex.com',
+            first_name='Demo',
+            last_name='User',
+            xp_points=500
+        )
+        db.session.add(user)
+        db.session.commit()
     user.reset_daily_counters_if_needed()
     
     if form.validate_on_submit():
@@ -106,10 +125,9 @@ def upload():
     return render_template('uploader/upload.html', form=form, user=user)
 
 @app.route('/review')
-@require_login
 def review():
     """Content review page"""
-    user = current_user
+    user = User.query.filter_by(email='demo@alphanex.com').first()
     user.reset_daily_counters_if_needed()
     
     if not user.can_review_today():
@@ -151,10 +169,19 @@ def review():
     return render_template('reviewer/review.html', form=form, upload=upload, user=user)
 
 @app.route('/profile')
-@require_login
 def profile():
     """User profile page"""
-    user = current_user
+    user = User.query.filter_by(email='demo@alphanex.com').first()
+    if not user:
+        user = User(
+            id=str(uuid.uuid4()),
+            email='demo@alphanex.com',
+            first_name='Demo',
+            last_name='User',
+            xp_points=500
+        )
+        db.session.add(user)
+        db.session.commit()
     user.reset_daily_counters_if_needed()
     
     # Get user statistics
@@ -169,7 +196,7 @@ def profile():
                          user_strikes=user_strikes)
 
 @app.route('/admin')
-@require_login
+
 def admin():
     """Admin panel (demo access for all users)"""
     # Get platform statistics
@@ -188,17 +215,17 @@ def admin():
                          pending_uploads=pending_uploads,
                          recent_users=recent_users,
                          recent_uploads=recent_uploads,
-                         current_user=current_user)
+                         user=user)
 
 @app.route('/rating', methods=['GET', 'POST'])
-@require_login
+
 def rating():
     """Platform rating and feedback page"""
     form = RatingForm()
     
     if form.validate_on_submit():
         rating_obj = Rating()
-        rating_obj.user_id = current_user.id
+        rating_obj.user_id = user.id
         rating_obj.rating = form.rating.data
         rating_obj.category = form.category.data
         rating_obj.description = form.description.data
@@ -210,18 +237,18 @@ def rating():
         flash('Thank you for your feedback!', 'success')
         return redirect(url_for('dashboard'))
     
-    return render_template('rating.html', form=form, user=current_user)
+    return render_template('rating.html', form=form, user=user)
 
 @app.route('/delete_upload/<int:upload_id>', methods=['POST'])
-@require_login
+
 def delete_upload(upload_id):
     """Delete user's own upload"""
-    upload = Upload.query.filter_by(id=upload_id, user_id=current_user.id).first_or_404()
+    upload = Upload.query.filter_by(id=upload_id, user_id=user.id).first_or_404()
     
     # Calculate penalty if past deadline
     penalty = upload.get_deletion_penalty()
     if penalty > 0:
-        current_user.xp_points = max(0, current_user.xp_points - penalty)
+        user.xp_points = max(0, user.xp_points - penalty)
         flash(f'Upload deleted with {penalty} XP penalty for late deletion.', 'warning')
     else:
         flash('Upload deleted successfully.', 'success')
