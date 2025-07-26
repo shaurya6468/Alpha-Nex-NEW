@@ -10,10 +10,7 @@ from flask_login import current_user, login_required
 from app import app, db
 from models import User, Upload, Review, Strike, WithdrawalRequest, AdminAction, Rating
 from forms import UploadForm, ReviewForm, RatingForm
-from replit_auth import require_login, make_replit_blueprint
-
-# Register Replit Auth blueprint
-app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
+# Removed Replit-specific authentication for external deployment
 
 # Make session permanent
 @app.before_request
@@ -54,12 +51,26 @@ def dashboard():
     # Get recent uploads
     recent_uploads = Upload.query.filter_by(user_id=user.id).order_by(Upload.uploaded_at.desc()).limit(5).all()
     
+    # Calculate daily remaining MB
+    daily_remaining_bytes = user.get_daily_upload_remaining()
+    daily_remaining_mb = daily_remaining_bytes / (1024 * 1024)
+    
+    # Calculate remaining daily uploads and reviews
+    max_daily_uploads = 999  # Unlimited
+    max_daily_reviews = 999  # Unlimited
+    daily_uploads_remaining = max_daily_uploads - (user.daily_upload_count or 0)
+    daily_reviews_remaining = max_daily_reviews - (user.daily_review_count or 0)
+    
     return render_template('dashboard.html', 
                          user=user,
+                         current_user=user,
                          total_uploads=total_uploads,
                          total_reviews=total_reviews,
                          pending_reviews=pending_reviews,
-                         recent_uploads=recent_uploads)
+                         recent_uploads=recent_uploads,
+                         daily_remaining_mb=daily_remaining_mb,
+                         daily_uploads_remaining=daily_uploads_remaining,
+                         daily_reviews_remaining=daily_reviews_remaining)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
@@ -122,7 +133,7 @@ def upload():
         flash(f'File uploaded successfully! You earned 25 XP points.', 'success')
         return redirect(url_for('dashboard'))
     
-    return render_template('uploader/upload.html', form=form, user=user)
+    return render_template('uploader/upload.html', form=form, user=user, current_user=user)
 
 @app.route('/review')
 def review():
@@ -166,7 +177,7 @@ def review():
         flash(f'Review submitted successfully! You earned 15 XP points.', 'success')
         return redirect(url_for('review'))
     
-    return render_template('reviewer/review.html', form=form, upload=upload, user=user)
+    return render_template('reviewer/review.html', form=form, upload=upload, user=user, current_user=user)
 
 @app.route('/profile')
 def profile():

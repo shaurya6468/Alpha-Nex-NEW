@@ -105,7 +105,7 @@
                                 <i class="fas fa-user me-2"></i>Profile
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('replit_auth.logout') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a></li>
                         </ul>
@@ -114,8 +114,8 @@
                 {% else %}
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('replit_auth.login') }}">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login with Replit
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Enter Demo
                         </a>
                     </li>
                 </ul>

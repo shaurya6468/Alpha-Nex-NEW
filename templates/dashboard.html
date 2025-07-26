@@ -10,7 +10,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h2 class="fw-bold text-black mb-1">
-                    <i class="fas fa-user-circle me-2"></i>{{ welcome_message if welcome_message else 'Welcome back, ' + (demo_user.name if demo_user else 'Demo User') + '!' }}
+                    <i class="fas fa-user-circle me-2"></i>{{ welcome_message if welcome_message else 'Welcome back, ' + (user.first_name if user and user.first_name else 'Demo User') + '!' }}
                 </h2>
                 <p class="text-muted mb-0">
                     <i class="fas fa-check-circle text-success me-1"></i>
@@ -19,13 +19,13 @@
             </div>
             <div class="text-end">
                 <h3 class="fw-bold text-black mb-0">
-                    <i class="fas fa-star text-warning me-1"></i>{{ demo_user.xp_points if demo_user else 500 }} XP
+                    <i class="fas fa-star text-warning me-1"></i>{{ user.xp_points if user else 500 }} XP
                 </h3>
                 <small class="text-muted">Total Earned Points</small>
-                {% if demo_user.xp_points >= 1200 %}
+                {% if user and user.xp_points >= 1200 %}
                 <div class="mt-1">
                     <small class="text-warning fw-bold">
-                        <i class="fas fa-exclamation-triangle me-1"></i>{{ 1500 - demo_user.xp_points }} XP until account required
+                        <i class="fas fa-exclamation-triangle me-1"></i>{{ 1500 - user.xp_points }} XP until account required
                     </small>
                 </div>
                 {% endif %}
@@ -35,25 +35,25 @@
 </div>
 
 <!-- Strike Warnings (Horizontal Layout) -->
-{% if demo_user and (demo_user.uploader_strikes > 0 or demo_user.reviewer_strikes > 0) %}
+{% if user and (user.uploader_strikes > 0 or user.reviewer_strikes > 0) %}
 <div class="alert alert-warning border-0 mb-4">
     <div class="d-flex align-items-center">
         <i class="fas fa-exclamation-triangle fa-lg me-3"></i>
         <div class="flex-grow-1">
             <h6 class="fw-bold mb-1">Strike Warning</h6>
             <div class="d-flex gap-4">
-                {% if demo_user.uploader_strikes > 0 %}
+                {% if user.uploader_strikes > 0 %}
                 <span>
-                    <strong>Uploader:</strong> {{ demo_user.uploader_strikes }}/3 strikes
-                    {% if demo_user.uploader_strikes >= 3 %}
+                    <strong>Uploader:</strong> {{ user.uploader_strikes }}/3 strikes
+                    {% if user.uploader_strikes >= 3 %}
                     <span class="badge bg-danger ms-1">BANNED</span>
                     {% endif %}
                 </span>
                 {% endif %}
-                {% if demo_user.reviewer_strikes > 0 %}
+                {% if user.reviewer_strikes > 0 %}
                 <span>
-                    <strong>Reviewer:</strong> {{ demo_user.reviewer_strikes }}/3 strikes
-                    {% if demo_user.reviewer_strikes >= 3 %}
+                    <strong>Reviewer:</strong> {{ user.reviewer_strikes }}/3 strikes
+                    {% if user.reviewer_strikes >= 3 %}
                     <span class="badge bg-danger ms-1">BANNED</span>
                     {% endif %}
                 </span>
@@ -130,7 +130,7 @@
                     <small class="text-muted">Total Uploads</small>
                     <div class="mt-1">
                         <small class="text-success">
-                            <i class="fas fa-calendar-day me-1"></i>{{ demo_user.get_remaining_uploads_today() if demo_user else 3 }}/3 left today
+                            <i class="fas fa-calendar-day me-1"></i>{{ user.get_remaining_uploads_today() if user else 3 }}/3 left today
                         </small>
                     </div>
                 </div>
@@ -149,7 +149,7 @@
                     <small class="text-muted">Reviews Given</small>
                     <div class="mt-1">
                         <small class="text-info">
-                            <i class="fas fa-eye me-1"></i>{{ demo_user.get_remaining_reviews_today() if demo_user else 5 }}/5 left today
+                            <i class="fas fa-eye me-1"></i>{{ user.get_remaining_reviews_today() if user else 5 }}/5 left today
                         </small>
                     </div>
                 </div>
@@ -174,12 +174,12 @@
     <div class="col-sm-6 col-lg-3">
         <div class="card border-0 bg-light h-100">
             <div class="card-body d-flex align-items-center">
-                <div class="bg-{% if demo_user.is_banned %}danger{% else %}success{% endif %} text-white rounded p-3 me-3">
-                    <i class="fas fa-{% if demo_user.is_banned %}ban{% else %}check-circle{% endif %} fa-lg"></i>
+                <div class="bg-{% if user.is_banned %}danger{% else %}success{% endif %} text-white rounded p-3 me-3">
+                    <i class="fas fa-{% if user.is_banned %}ban{% else %}check-circle{% endif %} fa-lg"></i>
                 </div>
                 <div>
                     <h5 class="fw-bold text-black mb-0">
-                        {% if demo_user.is_banned %}Banned{% else %}Active{% endif %}
+                        {% if user.is_banned %}Banned{% else %}Active{% endif %}
                     </h5>
                     <small class="text-muted">Account Status</small>
                 </div>
@@ -198,7 +198,7 @@
 <div class="row g-4 mb-4">
     <!-- Upload Card -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 {% if demo_user.is_banned %}opacity-50{% endif %}">
+        <div class="card border-0 shadow-sm h-100 {% if user.is_banned %}opacity-50{% endif %}">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="bg-black text-white rounded p-3">
@@ -220,8 +220,8 @@
                     <small class="text-muted ms-2">{{ "%.0f"|format(500 - daily_remaining_mb) }}/500 MB</small>
                 </div>
                 
-                {% if not demo_user.is_banned %}
-                <a href="{{ url_for('upload_file') }}" class="btn btn-dark w-100">
+                {% if not user.is_banned %}
+                <a href="{{ url_for('upload') }}" class="btn btn-dark w-100">
                     <i class="fas fa-upload me-2"></i>Start Uploading
                 </a>
                 {% else %}
@@ -231,12 +231,12 @@
                 {% endif %}
                 
                 <!-- Strike indicator -->
-                {% if demo_user.uploader_strikes > 0 %}
+                {% if user.uploader_strikes > 0 %}
                 <div class="alert alert-warning mt-2 mb-0 py-2">
                     <small>
                         <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>{{ demo_user.uploader_strikes }}/3 strikes</strong> - 
-                        {% if demo_user.uploader_strikes >= 3 %}Banned from uploading{% else %}Be careful with content quality{% endif %}
+                        <strong>{{ user.uploader_strikes }}/3 strikes</strong> - 
+                        {% if user.uploader_strikes >= 3 %}Banned from uploading{% else %}Be careful with content quality{% endif %}
                     </small>
                 </div>
                 {% endif %}
@@ -246,7 +246,7 @@
     
     <!-- Review Card -->
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100 {% if demo_user.is_banned %}opacity-50{% endif %}">
+        <div class="card border-0 shadow-sm h-100 {% if user.is_banned %}opacity-50{% endif %}">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div class="bg-black text-white rounded p-3">
@@ -269,8 +269,8 @@
                     </div>
                 </div>
                 
-                {% if not demo_user.is_banned %}
-                <a href="{{ url_for('review_content') }}" class="btn btn-dark w-100">
+                {% if not user.is_banned %}
+                <a href="{{ url_for('review') }}" class="btn btn-dark w-100">
                     <i class="fas fa-search me-2"></i>Start Reviewing
                 </a>
                 {% else %}
@@ -280,12 +280,12 @@
                 {% endif %}
                 
                 <!-- Strike indicator -->
-                {% if demo_user.reviewer_strikes > 0 %}
+                {% if user.reviewer_strikes > 0 %}
                 <div class="alert alert-warning mt-2 mb-0 py-2">
                     <small>
                         <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>{{ demo_user.reviewer_strikes }}/3 strikes</strong> - 
-                        {% if demo_user.reviewer_strikes >= 3 %}Banned from reviewing{% else %}Improve review quality{% endif %}
+                        <strong>{{ user.reviewer_strikes }}/3 strikes</strong> - 
+                        {% if user.reviewer_strikes >= 3 %}Banned from reviewing{% else %}Improve review quality{% endif %}
                     </small>
                 </div>
                 {% endif %}

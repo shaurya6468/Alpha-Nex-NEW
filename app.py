@@ -1,4 +1,4 @@
-print("Git push test")
+# Alpha Nex - Production Ready Flask Application
 import os
 import logging
 from flask import Flask
@@ -9,9 +9,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from apscheduler.schedulers.background import BackgroundScheduler
 import atexit
 
-# Configure logging
+# Configure logging for production
+log_level = logging.INFO if os.getenv('FLASK_ENV') == 'production' else logging.DEBUG
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=log_level,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
@@ -23,11 +24,11 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "alphanex-replit-auth-secret-key-2025")
+app.secret_key = os.getenv("SECRET_KEY", "alphanex-production-secret-key-change-me")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database - use PostgreSQL for production and multi-user support
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///alphanex.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///alphanex.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
